@@ -90,10 +90,6 @@ python code/s02_tool_use.py
 - Day 17-18：MCP Plugin / Comprehensive
 - Day 19-20：彩蛋章节 + 全书打磨
 
-## 项目价值
-
-如果你和我一样想进 DeepSeek Harness 团队，这个项目就是我理解 `Model + Harness = Evidence` 的证据。
-
 ## License
 
 MIT
