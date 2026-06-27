@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .env
+.agent_memory/
 .venv/
 venv/
 .DS_Store
