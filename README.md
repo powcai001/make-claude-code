@@ -35,39 +35,39 @@ make-claude-code/
 
 ### Part 1：地基 —— 让 Agent 动起来
 
-- [第 00 章：前言](docs/00-前言.md)
-- [第 01 章：Agent Loop](docs/01-agent-loop.md)
-- [第 02 章：Tool Use](docs/02-tool-use.md)
-- [第 03 章：Permission](docs/03-permission.md)
-- [第 04 章：Hooks](docs/04-hooks.md)
+- [第 00 章：前言](docs/00-第零章-前言.md)
+- [第 01 章：Agent Loop](docs/01-第一章-Agent-Loop.md)
+- [第 02 章：Tool Use](docs/02-第二章-Tool-Use.md)
+- [第 03 章：Permission](docs/03-第三章-Permission.md)
+- [第 04 章：Hooks](docs/04-第四章-Hooks.md)
 
 ### Part 2：记忆与规划 —— 让 Agent 不失忆、不跑偏
 
-- [第 05 章：TodoWrite](docs/05-todo-write.md)
-- [第 06 章：Subagent](docs/06-subagent.md)
-- [第 07 章：Skill Loading](docs/07-skill-loading.md)
-- [第 08 章：Context Compact](docs/08-context-compact.md)
-- [第 09 章：Memory](docs/09-memory.md)
-- [第 10 章：System Prompt](docs/10-system-prompt.md)
-- [第 11 章：Error Recovery](docs/11-error-recovery.md)
+- [第 05 章：TodoWrite](docs/05-第五章-TodoWrite.md)
+- [第 06 章：Subagent](docs/06-第六章-Subagent.md)
+- [第 07 章：Skill Loading](docs/07-第七章-Skill-Loading.md)
+- [第 08 章：Context Compact](docs/08-第八章-Context-Compact.md)
+- [第 09 章：Memory](docs/09-第九章-Memory.md)
+- [第 10 章：System Prompt](docs/10-第十章-System-Prompt.md)
+- [第 11 章：Error Recovery](docs/11-第十一章-Error-Recovery.md)
 
 ### Part 3：长期运行 —— 让 Agent 能自己跑很久
 
-- [第 12 章：Task System](docs/12-task-system.md)
-- [第 13 章：Background Tasks](docs/13-background-tasks.md)
-- [第 14 章：Cron Scheduler](docs/14-cron-scheduler.md)
+- [第 12 章：Task System](docs/12-第十二章-Task-System.md)
+- [第 13 章：Background Tasks](docs/13-第十三章-Background-Tasks.md)
+- [第 14 章：Cron Scheduler](docs/14-第十四章-Cron-Scheduler.md)
 
 ### Part 4：多 Agent 协作 —— 从单兵到团队
 
-- [第 15 章：Agent Teams](docs/15-agent-teams.md)
-- [第 16 章：Team Protocols](docs/16-team-protocols.md)
-- [第 17 章：Autonomous Agents](docs/17-autonomous-agents.md)
-- [第 18 章：Worktree Isolation](docs/18-worktree-isolation.md)
+- [第 15 章：Agent Teams](docs/15-第十五章-Agent-Teams.md)
+- [第 16 章：Team Protocols](docs/16-第十六章-Team-Protocols.md)
+- [第 17 章：Autonomous Agents](docs/17-第十七章-Autonomous-Agents.md)
+- [第 18 章：Worktree Isolation](docs/18-第十八章-Worktree-Isolation.md)
 
 ### Part 5：扩展与集成 —— 终点
 
-- [第 19 章：MCP Plugin](docs/19-mcp-plugin.md)
-- [第 20 章：Comprehensive](docs/20-comprehensive.md)
+- [第 19 章：MCP Plugin](docs/19-第十九章-MCP-Plugin.md)
+- [第 20 章：Comprehensive](docs/20-第二十章-Comprehensive.md)
 - [彩蛋章节：对照 ClaudeCode 真实系统提示词](docs/99-彩蛋章节-对照ClaudeCode真实系统提示词.md)
 
 ## 如何运行代码
