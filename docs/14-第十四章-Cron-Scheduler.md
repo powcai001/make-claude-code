@@ -1,5 +1,9 @@
 # 第 14 章：Cron Scheduler
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s14_cron_scheduler.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s14_cron_scheduler.py)
+
+
 ## 本章解决什么问题？
 
 Day 13 让 Task 可以放到后台线程里跑。主 Agent 不必一直等待子 Agent 调查完成，而是先拿到 `task_id`，之后用 `task_list`、`task_read`、`task_wait` 查看状态。

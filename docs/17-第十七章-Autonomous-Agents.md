@@ -1,5 +1,9 @@
 # 第 17 章：Autonomous Agents
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s17_autonomous_agents.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s17_autonomous_agents.py)
+
+
 ## 本章解决什么问题？
 
 前面几章已经把 Agent 的很多基础设施搭起来了：Task System 可以跟踪子任务，Background Tasks 可以后台运行，Cron Scheduler 可以按时间触发，Agent Teams 和 Team Protocols 可以组织多个角色协作。

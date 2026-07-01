@@ -1,5 +1,9 @@
 # 第 02 章：Tool Use
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s02_tool_use.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s02_tool_use.py)
+
+
 ## 本章解决什么问题？
 
 Day 01 里，我已经实现了一个最小 Agent Loop。模型可以请求 `bash`，Harness 可以执行命令，再把结果回填给模型。

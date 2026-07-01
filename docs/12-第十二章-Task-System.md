@@ -1,5 +1,9 @@
 # 第 12 章：Task System
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s12_task_system.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s12_task_system.py)
+
+
 ## 本章解决什么问题？
 
 Day 06 我已经做过一个 `task` 工具：主 Agent 可以把一段研究任务交给子 Agent，子 Agent 用自己的上下文调查完，再把报告返回给主 Agent。

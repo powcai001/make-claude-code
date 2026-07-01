@@ -1,5 +1,9 @@
 # 第 16 章：Team Protocols
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s16_team_protocols.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s16_team_protocols.py)
+
+
 ## 本章解决什么问题？
 
 Day 15 让 Agent 能组成角色化小队。`team_run` 可以派出 researcher、reviewer、tester 三个子 Agent，再汇总成团队报告。

@@ -1,5 +1,9 @@
 # 第 10 章：System Prompt
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s10_system_prompt.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s10_system_prompt.py)
+
+
 ## 本章解决什么问题？
 
 前 9 天我一直在往 Agent 里加能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory。

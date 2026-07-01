@@ -1,5 +1,9 @@
 # 第 15 章：Agent Teams
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s15_agent_teams.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s15_agent_teams.py)
+
+
 ## 本章解决什么问题？
 
 Day 12 到 Day 14 逐步把单个子 Agent 做成了可跟踪、可后台运行、可定时触发的 Task System。但这些能力仍然围绕“一个子 Agent 做一件事”。

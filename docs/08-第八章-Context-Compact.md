@@ -1,5 +1,9 @@
 # 第 08 章：Context Compact
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s08_context_compact.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s08_context_compact.py)
+
+
 ## 本章解决什么问题？
 
 Day 07 解决的是 system prompt 变大的问题：不要把所有 Skill 永久塞进上下文，而是按任务动态加载。

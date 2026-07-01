@@ -1,5 +1,9 @@
 # 第 05 章：TodoWrite
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s05_todo_write.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s05_todo_write.py)
+
+
 ## 本章解决什么问题？
 
 Day 04 结束时，我的 Agent 已经有了一个比较像样的 Harness：模型负责决策，工具负责执行，权限和日志通过 Hooks 挂在生命周期上。

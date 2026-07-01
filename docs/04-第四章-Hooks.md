@@ -1,5 +1,9 @@
 # 第 04 章：Hooks
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s04_hooks.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s04_hooks.py)
+
+
 ## 本章解决什么问题？
 
 Day 03 我已经给 Agent 加上了 Permission：模型可以提出 `tool_use`，但真正执行之前，Harness 会先判断 `allow / ask / deny`。

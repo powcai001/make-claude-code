@@ -1,5 +1,9 @@
 # 第 20 章：Comprehensive
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s20_comprehensive.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s20_comprehensive.py)
+
+
 ## 本章解决什么问题？
 
 从 Day 01 到 Day 19，我每天给 Agent Harness 加一块能力：

@@ -1,5 +1,9 @@
 # 第 03 章：Permission
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s03_permission.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s03_permission.py)
+
+
 Day 02 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`edit_file`。
 
 这时 Agent 已经不只是“会说话”了，它开始能动手改文件、执行命令。

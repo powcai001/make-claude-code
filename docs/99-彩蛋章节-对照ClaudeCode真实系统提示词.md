@@ -1,5 +1,8 @@
 # 彩蛋章节：对照 ClaudeCode 真实系统提示词
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+
+
 ## 本章解决什么问题？
 
 [这里写：为什么要对照 claude-code-system-prompts？它能证明我研究过真实系统的哪一部分？]

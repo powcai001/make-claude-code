@@ -1,5 +1,9 @@
 # 第 01 章：Agent Loop
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s01_agent_loop.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s01_agent_loop.py)
+
+
 ## 本章解决什么问题？
 
 如果只有一个大模型，它本质上只能做一件事：根据上下文预测下一段文本。

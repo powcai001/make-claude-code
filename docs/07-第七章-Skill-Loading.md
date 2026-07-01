@@ -1,5 +1,9 @@
 # 第 07 章：Skill Loading
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s07_skill_loading.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s07_skill_loading.py)
+
+
 ## 本章解决什么问题？
 
 Day 06 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出去，避免主上下文被搜索细节塞满。

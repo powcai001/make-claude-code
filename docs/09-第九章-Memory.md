@@ -1,5 +1,9 @@
 # 第 09 章：Memory
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s09_memory.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s09_memory.py)
+
+
 ## 本章解决什么问题？
 
 Day 08 做的是 Context Compact。它解决的是“当前会话太长”的问题：把早期历史压缩成摘要，让 Agent 不至于因为上下文窗口爆掉而停下来。

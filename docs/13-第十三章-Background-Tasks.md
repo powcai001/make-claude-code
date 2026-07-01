@@ -1,5 +1,9 @@
 # 第 13 章：Background Tasks
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s13_background_tasks.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s13_background_tasks.py)
+
+
 ## 本章解决什么问题？
 
 Day 12 把 `task` 从一次性子 Agent 调用升级成了 Task System：每个子任务都有 `task_id`、状态、轮次、结果和错误记录。

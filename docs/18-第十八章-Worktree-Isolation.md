@@ -1,5 +1,9 @@
 # 第 18 章：Worktree Isolation
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s18_worktree_isolation.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s18_worktree_isolation.py)
+
+
 ## 本章解决什么问题？
 
 前面 17 天的 Agent 几乎所有工具都跑在同一个 `WORKDIR` 里。`bash`、`write_file`、`edit_file` 直接改主工作区。

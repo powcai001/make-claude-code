@@ -1,5 +1,9 @@
 # 第 06 章：Subagent
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s06_subagent.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s06_subagent.py)
+
+
 ## 本章解决什么问题？
 
 Day 05 加上 `TodoWrite` 以后，Agent 已经能维护一份可见计划了。

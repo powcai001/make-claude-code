@@ -1,5 +1,9 @@
 # 第 11 章：Error Recovery
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s11_error_recovery.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s11_error_recovery.py)
+
+
 ## 本章解决什么问题？
 
 前 10 天的 Agent 已经有了不少能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory、System Prompt 组装。

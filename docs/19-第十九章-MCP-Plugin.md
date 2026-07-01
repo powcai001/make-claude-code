@@ -1,5 +1,9 @@
 # 第 19 章：MCP Plugin
 
+> 📦 **本项目源码**：https://github.com/powcai001/make-claude-code
+> 📄 **本章代码**：[`code/s19_mcp_plugin.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s19_mcp_plugin.py)
+
+
 ## 本章解决什么问题？
 
 前 18 天里，Agent 的工具能力都是写死在 Harness 里的。比如 `bash`、`read_file`、`task`、`team_run`、`worktree_create`，都是 Python 文件里的函数。
