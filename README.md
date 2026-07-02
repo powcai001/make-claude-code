@@ -83,12 +83,12 @@ python code/s02_tool_use.py
 
 ## 20 天路线
 
-- Day 1-4：Agent Loop / Tool Use / Permission / Hooks
-- Day 5-9：TodoWrite / Subagent / Skill Loading / Context Compact / Memory / System Prompt / Error Recovery
-- Day 10-12：Task System / Background Tasks / Cron Scheduler
-- Day 13-16：Agent Teams / Team Protocols / Autonomous Agents / Worktree Isolation
-- Day 17-18：MCP Plugin / Comprehensive
-- Day 19-20：彩蛋章节 + 全书打磨
+- 第 1-4 天：Agent Loop / Tool Use / Permission / Hooks
+- 第 5-9 天：TodoWrite / Subagent / Skill Loading / Context Compact / Memory / System Prompt / Error Recovery
+- 第 10-12 天：Task System / Background Tasks / Cron Scheduler
+- 第 13-16 天：Agent Teams / Team Protocols / Autonomous Agents / Worktree Isolation
+- 第 17-18 天：MCP Plugin / Comprehensive
+- 第 19-20 天：彩蛋章节 + 全书打磨
 
 ## License
 

@@ -162,7 +162,7 @@ def discover_skills(root: Path = SKILLS_DIR) -> dict[str, Skill]:
 
 
 def score_skill(query: str, skill: Skill) -> int:
-    """用简单关键词计分选择技能；Day07 不引入 embeddings。"""
+    """用简单关键词计分选择技能；第 07 天 不引入 embeddings。"""
     query_words = {
         word.strip(".,:;()[]{}!?，。！？、").lower()
         for word in query.replace("-", " ").split()
