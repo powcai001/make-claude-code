@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-从 第一章 到 第十九章，我每天给 Agent Harness 加一块能力：
+从 第一章 到 第 19 章，我每天给 Agent Harness 加一块能力：
 
 - Agent Loop
 - Tool Use
@@ -28,19 +28,19 @@
 - Worktree Isolation
 - MCP Plugin
 
-到 第十九章，这台机器已经相当复杂。子系统很多：任务、团队、定时、隔离、自主运行、外部插件……每个都有自己的状态和查看工具。
+到 第 19 章，这台机器已经相当复杂。子系统很多：任务、团队、定时、隔离、自主运行、外部插件……每个都有自己的状态和查看工具。
 
 但正因为它太复杂，出现了一个新问题：**没有统一入口能看到全局状态**。
 
 用户想知道“现在 Harness 里到底在发生什么”，得分别调用 `task_list`、`cron_list`、`team_list`、`autonomous_list`、`worktree_list`、`mcp_list`、`read_memory`、`show_errors`、`show_system_prompt`。这很不方便。
 
-所以 第二十章 作为终章，不再叠加新机制，而是做一件事：**综合集成与收尾**。
+所以 第 20 章 作为终章，不再叠加新机制，而是做一件事：**综合集成与收尾**。
 
 > 补一个 `system_status` 总览工具，把前 19 章的全部子系统集成进一个仪表盘，让 Harness 有一个统一的状态出口。
 
 ## 核心概念
 
-第二十章 的核心是“仪表盘”思想：
+第 20 章 的核心是“仪表盘”思想：
 
 ```text
 system_status
@@ -62,7 +62,7 @@ system_status
 
 完整实现见：`code/s20_comprehensive.py`
 
-第二十章 的代码基于 第十九章 的完整实现。本章新增的只有一个工具：`system_status`。
+第 20 章 的代码基于 第 19 章 的完整实现。本章新增的只有一个工具：`system_status`。
 
 ### 状态聚合辅助
 
@@ -147,52 +147,52 @@ def run_system_status() -> str:
 
 ## 全书能力清单
 
-第二十章 是一个合适的收尾点。让我把前 20 章造出来的能力按 Part 整理一遍。
+第 20 章 是一个合适的收尾点。让我把前 20 章造出来的能力按 Part 整理一遍。
 
 ### Part 1：地基 —— 让 Agent 动起来
 
 | 章节 | 能力 |
 |---|---|
 | 第一章 Agent Loop | 模型 → 工具 → 模型的循环 |
-| 第二章 Tool Use | 让模型调用结构化工具 |
-| 第三章 Permission | 工具执行前的权限确认 |
-| 第四章 Hooks | PreToolUse / PostToolUse / UserPromptSubmit |
+| 第 02 章 Tool Use | 让模型调用结构化工具 |
+| 第 03 章 Permission | 工具执行前的权限确认 |
+| 第 04 章 Hooks | PreToolUse / PostToolUse / UserPromptSubmit |
 
 ### Part 2：记忆与规划
 
 | 章节 | 能力 |
 |---|---|
-| 第五章 TodoWrite | 可见任务列表 |
-| 第六章 Subagent | 独立上下文的子 Agent |
-| 第七章 Skill Loading | 按需加载技能 |
-| 第八章 Context Compact | 长对话的上下文压缩 |
-| 第九章 Memory | 跨会话的持久化记忆 |
-| 第十章 System Prompt | 结构化组装系统提示词 |
-| 第十一章 Error Recovery | 错误分类与恢复建议 |
+| 第 05 章 TodoWrite | 可见任务列表 |
+| 第 06 章 Subagent | 独立上下文的子 Agent |
+| 第 07 章 Skill Loading | 按需加载技能 |
+| 第 08 章 Context Compact | 长对话的上下文压缩 |
+| 第 09 章 Memory | 跨会话的持久化记忆 |
+| 第 10 章 System Prompt | 结构化组装系统提示词 |
+| 第 11 章 Error Recovery | 错误分类与恢复建议 |
 
 ### Part 3：长期运行
 
 | 章节 | 能力 |
 |---|---|
-| 第十二章 Task System | 子任务生命周期 |
-| 第十三章 Background Tasks | 后台非阻塞执行 |
-| 第十四章 Cron Scheduler | 时间触发任务 |
+| 第 12 章 Task System | 子任务生命周期 |
+| 第 13 章 Background Tasks | 后台非阻塞执行 |
+| 第 14 章 Cron Scheduler | 时间触发任务 |
 
 ### Part 4：多 Agent 协作
 
 | 章节 | 能力 |
 |---|---|
-| 第十五章 Agent Teams | 角色化小队 |
-| 第十六章 Team Protocols | 可复用协作流程 |
-| 第十七章 Autonomous Agents | 有边界的自主运行 |
-| 第十八章 Worktree Isolation | 隔离工作目录 |
+| 第 15 章 Agent Teams | 角色化小队 |
+| 第 16 章 Team Protocols | 可复用协作流程 |
+| 第 17 章 Autonomous Agents | 有边界的自主运行 |
+| 第 18 章 Worktree Isolation | 隔离工作目录 |
 
 ### Part 5：扩展与集成
 
 | 章节 | 能力 |
 |---|---|
-| 第十九章 MCP Plugin | 外部能力插件化 |
-| 第二十章 Comprehensive | 全局状态总览 |
+| 第 19 章 MCP Plugin | 外部能力插件化 |
+| 第 20 章 Comprehensive | 全局状态总览 |
 
 ## 我踩的坑
 
@@ -200,7 +200,7 @@ def run_system_status() -> str:
 
 写终章时最大的诱惑是“再塞一个能力进去”。
 
-但我意识到：如果 第二十章 还在加新机制，就违背了“收尾”的定位。终章的价值是让已有的复杂系统变得可观察、可理解，而不是再增加复杂度。
+但我意识到：如果 第 20 章 还在加新机制，就违背了“收尾”的定位。终章的价值是让已有的复杂系统变得可观察、可理解，而不是再增加复杂度。
 
 所以我只加了 `system_status`，把精力放在“把前面所有东西串起来”。
 
@@ -218,7 +218,7 @@ def run_system_status() -> str:
 
 ## 小结
 
-第二十章 的关键词是：**收尾与可观察性**。
+第 20 章 的关键词是：**收尾与可观察性**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，这类总览能力通常体现在：
 

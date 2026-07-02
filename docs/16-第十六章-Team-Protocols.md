@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第十五章 让 Agent 能组成角色化小队。`team_run` 可以派出 researcher、reviewer、tester 三个子 Agent，再汇总成团队报告。
+第 15 章 让 Agent 能组成角色化小队。`team_run` 可以派出 researcher、reviewer、tester 三个子 Agent，再汇总成团队报告。
 
 但用着用着会发现一个问题：**团队流程是临时的**。
 
@@ -18,13 +18,13 @@
 - 决策类任务：propose → challenge → synthesize。
 - 安全类任务：threat model → attack → mitigate。
 
-这些套路不应该每次重新发明。所以 第十六章 我在 Agent Teams 上再加一层 Team Protocols。
+这些套路不应该每次重新发明。所以 第 16 章 我在 Agent Teams 上再加一层 Team Protocols。
 
 > Team Protocols 把团队协作流程沉淀成可复用的协议模板，让 `team_run` 可以按 `plan`、`debate`、`redteam` 等协议走固定的多阶段流程。
 
 ## 核心概念
 
-第十六章 的流程是：
+第 16 章 的流程是：
 
 ```text
 team_run(protocol="debate")
@@ -52,7 +52,7 @@ team_run(protocol="debate")
 
 完整实现见：`code/s16_team_protocols.py`
 
-第十六章 继续基于 第十五章，所以 Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在协议模板、协议解析和协议化团队运行。
+第 16 章 继续基于 第 15 章，所以 Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在协议模板、协议解析和协议化团队运行。
 
 ### ProtocolStage 和 TeamProtocol
 
@@ -121,7 +121,7 @@ def main() -> None:
     ensure_memory_file()
     ensure_cron_scheduler_started()
     TEAM_PROTOCOLS.update(builtin_team_protocols())
-    print("第十六章 Team Protocols. ...")
+    print("第 16 章 Team Protocols. ...")
 ```
 
 ### 协议解析
@@ -219,7 +219,7 @@ def run_protocol_list() -> str:
 
 ## 小结
 
-第十六章 的关键词是：**协议化协作**。
+第 16 章 的关键词是：**协议化协作**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类系统里，Team Protocols 对应的是：
 
@@ -246,6 +246,6 @@ protocol template -> stages -> tracked tasks -> protocol report
 > 协作流程本身应该是一等公民。把“怎么做”沉淀成协议，团队才能稳定、可复现地协作。
 
 
-第十五章 让 Agent 能组队；第十六章 让团队知道“按什么套路组队”。
+第 15 章 让 Agent 能组队；第 16 章 让团队知道“按什么套路组队”。
 
 有了 `plan`、`debate`、`redteam` 三个内置协议和 `protocol_list`，同一类问题每次都能走相同的协作流程，团队输出从“随机多视角”变成“稳定可复现的多阶段工作流”。

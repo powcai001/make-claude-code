@@ -16,13 +16,13 @@
 
 如果所有改动都直接落到主工作区，用户就得时刻盯着、随时回滚。这违背了“先在沙盒里试一下”的工程直觉。
 
-所以 第十八章 我实现一个最小版 Worktree Isolation：
+所以 第 18 章 我实现一个最小版 Worktree Isolation：
 
 > 让 Harness 可以在 `.agent_worktrees/` 下创建隔离工作目录，task / subagent 可以指定在其中运行，bash 的 cwd 临时切到隔离目录，结束后再恢复主工作区。
 
 ## 核心概念
 
-第十八章 的流程是：
+第 18 章 的流程是：
 
 ```text
 worktree_create -> WorktreeRecord(wt-0001)
@@ -51,7 +51,7 @@ worktree_create -> WorktreeRecord(wt-0001)
 
 完整实现见：`code/s18_worktree_isolation.py`
 
-第十八章 继续基于 第十七章，所以 Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 worktree 记录、线程局部 cwd 和 worktree 工具。
+第 18 章 继续基于 第 17 章，所以 Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 worktree 记录、线程局部 cwd 和 worktree 工具。
 
 ### WorktreeRecord
 
@@ -143,7 +143,7 @@ def run_bash(command: str) -> str:
     result = subprocess.run(command, shell=True, cwd=cwd, ...)
 ```
 
-为什么用线程局部？因为 第十三章 之后有后台任务，多个 subagent 可能并发跑。如果用全局变量切换 cwd，一个任务会影响另一个。线程局部保证每个任务在自己的线程里看到自己的 cwd。
+为什么用线程局部？因为 第 13 章 之后有后台任务，多个 subagent 可能并发跑。如果用全局变量切换 cwd，一个任务会影响另一个。线程局部保证每个任务在自己的线程里看到自己的 cwd。
 
 ### task 支持 worktree
 
@@ -198,7 +198,7 @@ def run_worktree_remove(wt_id: str) -> str:
 
 ### worktree 工具
 
-第十八章 新增四个工具：
+第 18 章 新增四个工具：
 
 - `worktree_create`：创建隔离目录。
 - `worktree_list`：列出所有 worktree。
@@ -238,7 +238,7 @@ def run_worktree_remove(wt_id: str) -> str:
 
 ## 小结
 
-第十八章 的关键词是：**隔离执行**。
+第 18 章 的关键词是：**隔离执行**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，Worktree Isolation 通常体现在：
 

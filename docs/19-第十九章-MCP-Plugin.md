@@ -12,13 +12,13 @@
 
 所以真实 Claude Code / Codex 类工具会把一部分能力抽象成外部插件或 MCP server：Harness 负责发现、展示和调用，具体能力由插件提供。
 
-第十九章 我实现一个最小版 MCP Plugin：
+第 19 章 我实现一个最小版 MCP Plugin：
 
 > 用一个内存态 plugin registry 表示外部能力提供方，把插件工具统一暴露成 `mcp_list`、`mcp_read`、`mcp_call` 这组工具。
 
 ## 核心概念
 
-第十九章 的流程是：
+第 19 章 的流程是：
 
 ```text
 mcp_register / builtin_mcp_plugins
@@ -46,7 +46,7 @@ Tool 是插件暴露出来的具体能力。它有工具名、描述和 input_sc
 
 完整实现见：`code/s19_mcp_plugin.py`
 
-第十九章 继续基于 第十八章，所以 Worktree Isolation、Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 MCP plugin registry 和 MCP 工具。
+第 19 章 继续基于 第 18 章，所以 Worktree Isolation、Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 MCP plugin registry 和 MCP 工具。
 
 ### McpTool 和 McpPlugin
 
@@ -185,7 +185,7 @@ def run_mcp_call(plugin: str, tool: str, arguments: dict[str, Any] | None = None
 MCP plugin xxx.yyy is registered but has no local handler in this minimal demo.
 ```
 
-这正好说明了 第十九章 的边界：我实现的是 Harness 侧 registry，不是真实外部 MCP transport。
+这正好说明了 第 19 章 的边界：我实现的是 Harness 侧 registry，不是真实外部 MCP transport。
 
 ## 我踩的坑
 
@@ -193,7 +193,7 @@ MCP plugin xxx.yyy is registered but has no local handler in this minimal demo.
 
 MCP 的完整协议涉及 transport、JSON-RPC、server lifecycle、tool schema、resource、prompt、鉴权等内容。
 
-如果 第十九章 直接实现完整 MCP，会偏离这个项目的节奏。
+如果 第 19 章 直接实现完整 MCP，会偏离这个项目的节奏。
 
 所以我先做 registry 和统一调用入口，让代码具备“插件化工具”的形状。未来要接真实 MCP server，可以把 `run_mcp_call()` 的内部实现换成进程通信或网络通信。
 
@@ -213,7 +213,7 @@ MCP 的完整协议涉及 transport、JSON-RPC、server lifecycle、tool schema�
 
 ## 小结
 
-第十九章 的关键词是：**外部能力插件化**。
+第 19 章 的关键词是：**外部能力插件化**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，MCP 或插件系统通常对应这些能力：
 

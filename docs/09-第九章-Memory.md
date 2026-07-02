@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第八章 做的是 Context Compact。它解决的是“当前会话太长”的问题：把早期历史压缩成摘要，让 Agent 不至于因为上下文窗口爆掉而停下来。
+第 08 章 做的是 Context Compact。它解决的是“当前会话太长”的问题：把早期历史压缩成摘要，让 Agent 不至于因为上下文窗口爆掉而停下来。
 
 但 Compact 不是长期记忆。它有两个明显边界：
 
@@ -20,7 +20,7 @@
 - 提交前要跑语法检查。
 - 不要把 `.env`、本地缓存、私有配置写进 Git。
 
-这些信息不应该每轮都靠用户重新输入，也不应该混在不断被压缩的聊天历史里。所以 第九章 我实现一个最小版 Memory：
+这些信息不应该每轮都靠用户重新输入，也不应该混在不断被压缩的聊天历史里。所以 第 09 章 我实现一个最小版 Memory：
 
 > 把稳定事实写进工作区的持久化文件，并在每轮构造 system prompt 时重新注入。
 
@@ -59,7 +59,7 @@ user preference / project fact
 
 完整实现见：`code/s09_memory.py`
 
-第九章 的实现是在 第八章 的 Agent 上继续叠加，所以前面的工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact 都保留。
+第 09 章 的实现是在 第 08 章 的 Agent 上继续叠加，所以前面的工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact 都保留。
 
 新增的核心代码其实不多。
 
@@ -99,7 +99,7 @@ Agent 启动时会调用它：
 def main() -> None:
     """启动一个带持久化 Memory 的最小 Agent。"""
     ensure_memory_file()
-    print("第九章 Memory. 输入任务开始，输入 q / exit / 空行退出。")
+    print("第 09 章 Memory. 输入任务开始，输入 q / exit / 空行退出。")
 ```
 
 ### 读取并注入 Memory
@@ -214,7 +214,7 @@ def run_read_memory() -> str:
 
 如果把 todo 也持久化，第二天打开项目时，Agent 可能还以为昨天那个 `in_progress` 任务没有完成，反而制造噪音。
 
-所以 第九章 我只持久化“长期事实”，不持久化“当前计划”。
+所以 第 09 章 我只持久化“长期事实”，不持久化“当前计划”。
 
 ### 坑 2：Memory 不能无脑覆盖当前指令
 
@@ -240,13 +240,13 @@ Memory 里可能有用户偏好、机器路径、项目私有约定，甚至用�
 
 ## 小结
 
-第九章 的关键词是：**稳定事实持久化**。
+第 09 章 的关键词是：**稳定事实持久化**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，Memory 通常会体现为几类机制：
 
 - 项目级说明文件：例如 `CLAUDE.md`、`AGENTS.md`、仓库里的开发约定文档。
 - 用户级偏好：例如用户希望回答语言、代码风格、常用流程。
-- 会话恢复摘要：和 第八章 的 Compact 接近，但可能被更持久地保存。
+- 会话恢复摘要：和 第 08 章 的 Compact 接近，但可能被更持久地保存。
 - Harness 注入逻辑：启动或每轮调用模型前，把相关记忆拼进 system/developer context。
 
 我这个最小实现对应的是“项目级持久化记忆”：

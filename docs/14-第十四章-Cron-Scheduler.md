@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第十三章 让 Task 可以放到后台线程里跑。主 Agent 不必一直等待子 Agent 调查完成，而是先拿到 `task_id`，之后用 `task_list`、`task_read`、`task_wait` 查看状态。
+第 13 章 让 Task 可以放到后台线程里跑。主 Agent 不必一直等待子 Agent 调查完成，而是先拿到 `task_id`，之后用 `task_list`、`task_read`、`task_wait` 查看状态。
 
 但这仍然是“用户主动触发”的任务模型。真实 Agent 如果要做长期代理，还需要另一类能力：**按时间自动触发任务**。
 
@@ -17,13 +17,13 @@
 - 每天扫描一次项目 TODO。
 - 在长时间重构期间周期性运行只读巡检。
 
-这些任务不应该靠用户一遍遍输入，也不应该写成阻塞循环卡住主 Agent。所以 第十四章 我在 Background Tasks 之上增加一个最小 Cron Scheduler。
+这些任务不应该靠用户一遍遍输入，也不应该写成阻塞循环卡住主 Agent。所以 第 14 章 我在 Background Tasks 之上增加一个最小 Cron Scheduler。
 
 > Cron Scheduler 把“用户主动发起任务”扩展成“Harness 按时间触发任务”：到期后自动创建后台 Task，并把触发记录保存在 CronJob 里。
 
 ## 核心概念
 
-第十四章 的流程是：
+第 14 章 的流程是：
 
 ```text
 cron_add(interval_seconds)
@@ -41,7 +41,7 @@ cron_add(interval_seconds)
 
 第二，Scheduler Loop。
 
-进程内有一个轻量后台线程，定期扫描到期的 CronJob。发现到期任务后，就调用 第十三章 的后台 Task 机制。
+进程内有一个轻量后台线程，定期扫描到期的 CronJob。发现到期任务后，就调用 第 13 章 的后台 Task 机制。
 
 第三，手动 tick。
 
@@ -51,7 +51,7 @@ cron_add(interval_seconds)
 
 完整实现见：`code/s14_cron_scheduler.py`
 
-第十四章 继续基于 第十三章，所以 Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 CronJob、调度线程和 cron 工具。
+第 14 章 继续基于 第 13 章，所以 Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 CronJob、调度线程和 cron 工具。
 
 ### CronJob
 
@@ -168,7 +168,7 @@ def trigger_cron_job(job: CronJob, now: float | None = None) -> str:
     return f"Triggered {job['id']} -> {record['id']}"
 ```
 
-这段代码复用了 第十三章 的后台任务机制：Cron 不直接跑模型，而是创建一个后台 Task。
+这段代码复用了 第 13 章 的后台任务机制：Cron 不直接跑模型，而是创建一个后台 Task。
 
 这样 Task System 仍然是所有子 Agent 执行的统一入口。
 
@@ -211,7 +211,7 @@ Agent 启动时会调用它，`cron_add` / `cron_resume` 也会确保调度线�
 
 ### cron 工具
 
-第十四章 新增了一组工具：
+第 14 章 新增了一组工具：
 
 - `cron_add`：登记周期任务。
 - `cron_list`：列出所有 CronJob。
@@ -246,7 +246,7 @@ if runs is not None and runs <= 0:
 
 如果把它们混在一起，一个周期任务运行 10 次，到底是一个 Task 还是 10 个 Task？结果应该存在哪里？错误算哪一次？
 
-所以 第十四章 单独引入 `CronJob`，并让它记录触发出来的 `task_ids`。
+所以 第 14 章 单独引入 `CronJob`，并让它记录触发出来的 `task_ids`。
 
 ### 坑 2：调度必须有下限
 
@@ -264,13 +264,13 @@ Use cron_add only for recurring, bounded, user-approved checks.
 
 Cron 到期后最简单的做法是直接调用模型。
 
-但这会绕过 第十二章/13 已经做好的任务记录、后台线程、错误查看等机制。
+但这会绕过 第 12 章/13 已经做好的任务记录、后台线程、错误查看等机制。
 
 所以我让 `trigger_cron_job()` 创建后台 `TaskRecord`，再用 `run_background_task()` 执行。这样无论任务来自用户手动 `task`，还是来自 cron 触发，都能用同一套 `task_list` / `task_read` 查看。
 
 ## 小结
 
-第十四章 的关键词是：**时间触发**。
+第 14 章 的关键词是：**时间触发**。
 
 **对照真实 Claude Code**：真实 Claude Code / Codex 类工具不一定直接叫 Cron Scheduler，但会有类似的调度能力：
 
@@ -300,6 +300,6 @@ scheduled rule -> due scan -> background Task -> tracked result
 > Scheduler 不应该绕过 Agent Harness，而应该把到期事件转成标准 Task，让已有的任务、错误和可观察性机制继续生效。
 
 
-第十三章 解决的是“任务能不能后台跑”；第十四章 解决的是“任务能不能按时间自动发起”。
+第 13 章 解决的是“任务能不能后台跑”；第 14 章 解决的是“任务能不能按时间自动发起”。
 
 有了 `CronJob`、`cron_add`、`cron_tick` 和调度线程，Agent Harness 开始具备长期代理的雏形：它不仅能响应用户输入，也能在时间到达时主动创建后台任务。

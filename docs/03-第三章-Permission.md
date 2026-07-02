@@ -4,7 +4,7 @@
 > 📄 **本章代码**：[`code/s03_permission.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s03_permission.py)
 
 
-第二章 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`edit_file`。
+第 02 章 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`edit_file`。
 
 这时 Agent 已经不只是“会说话”了，它开始能动手改文件、执行命令。
 
@@ -18,7 +18,7 @@
 
 ## 本章解决什么问题？
 
-第二章 的工具分发层解决的是：
+第 02 章 的工具分发层解决的是：
 
 ```text
 模型想调用哪个工具？
@@ -116,7 +116,7 @@ Permission denied: ...
 
 ## Permission 和 safe_path 的区别
 
-第二章 我已经写了 `safe_path()`：
+第 02 章 我已经写了 `safe_path()`：
 
 ```python
 def safe_path(path: str) -> Path:
@@ -157,7 +157,7 @@ Permission：执行边界
 
 这一章没有重写 Agent Loop，也没有重写 Tool Use。
 
-我只是把 第二章 里的“危险命令 demo guard”从 `run_bash()` 里拿出来，变成一个独立的权限管线。
+我只是把 第 02 章 里的“危险命令 demo guard”从 `run_bash()` 里拿出来，变成一个独立的权限管线。
 
 核心类型很简单：
 
@@ -310,17 +310,17 @@ Allow? [y/N]
 
 这一章的坑，抓住几件事就够了：
 
-- **权限逻辑不要塞进 handler。** 第二章里我把危险命令判断写在 `run_bash()` 里，结果是每个工具各管各的权限，规则散得到处都是。正确做法是把权限判断提到 handler 执行前，统一一道门。
+- **权限逻辑不要塞进 handler。** 第 02 章里我把危险命令判断写在 `run_bash()` 里，结果是每个工具各管各的权限，规则散得到处都是。正确做法是把权限判断提到 handler 执行前，统一一道门。
 - **拒绝工具后必须回填 `tool_result`。** 不能 `continue` 跳过——模型发起的每个 `tool_use` 都要有一个对应的 `tool_result`，否则消息链断裂，模型不知道发生了什么。拒绝也是一种结果。
 - **不要把所有写操作都直接 deny。** 写文件全 deny，Agent 就没法完成任何编码任务。教学版的合理策略是：读 allow、写 ask、明显危险 deny，刚好展示三种决策。
-- **子串匹配挡不住组合命令。** `DENIED_BASH_FRAGMENTS` 是简单子串匹配，`rm -rf /` 能挡住，但 `echo hi && rm -rf foo` 这种用 `&&` 拼起来的命令，子串匹配不一定命中。真实 Claude Code 会把组合命令按 `&&` `;` `|` 拆成子命令逐条匹配——这是后面优化权限规则时要补的点，第三章先知道有这个坑就行。
+- **子串匹配挡不住组合命令。** `DENIED_BASH_FRAGMENTS` 是简单子串匹配，`rm -rf /` 能挡住，但 `echo hi && rm -rf foo` 这种用 `&&` 拼起来的命令，子串匹配不一定命中。真实 Claude Code 会把组合命令按 `&&` `;` `|` 拆成子命令逐条匹配——这是后面优化权限规则时要补的点，第 03 章先知道有这个坑就行。
 - **deny 是单调的。** 一旦某个环节决定 deny，后续环节不能翻转成 allow。这是权限系统最重要的安全不变式：在纵深防御里，内层不该有能力削弱外层的保护。理解了这一点，后面加 Hooks 时就不会犯"用 hook 去解锁被全局规则禁止的操作"这种错。
 
 ## 小结
 
 第一章我得到的是：`一个工具 + 一个循环 = 一个 Agent`。  
-第二章我得到的是：`加工具不是改循环，而是加 schema、加 handler、注册 dispatch map`。  
-第三章我得到的是：
+第 02 章我得到的是：`加工具不是改循环，而是加 schema、加 handler、注册 dispatch map`。  
+第 03 章我得到的是：
 
 ```text
 模型可以提出动作，但 Harness 决定动作能不能执行。

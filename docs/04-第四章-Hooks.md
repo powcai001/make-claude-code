@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第三章 我已经给 Agent 加上了 Permission：模型可以提出 `tool_use`，但真正执行之前，Harness 会先判断 `allow / ask / deny`。
+第 03 章 我已经给 Agent 加上了 Permission：模型可以提出 `tool_use`，但真正执行之前，Harness 会先判断 `allow / ask / deny`。
 
 问题是：如果继续往 Agent 里加能力，会发生什么？
 
@@ -28,7 +28,7 @@
 
 这样写当然能跑，但它有一个工程问题：核心循环和扩展逻辑耦合在一起了。
 
-所以 第四章 要解决的问题是：**如何让 Agent Loop 保持稳定，同时允许 Harness 在关键生命周期点挂载额外行为？**
+所以 第 04 章 要解决的问题是：**如何让 Agent Loop 保持稳定，同时允许 Harness 在关键生命周期点挂载额外行为？**
 
 答案就是 Hooks。
 
@@ -80,13 +80,13 @@ PostToolUse hooks
 tool_result -> messages
 ```
 
-第三章 的流程是：
+第 03 章 的流程是：
 
 ```text
 tool_use -> permission check -> tool handler -> tool_result
 ```
 
-第四章 的流程是：
+第 04 章 的流程是：
 
 ```text
 tool_use -> PreToolUse hooks -> tool handler -> PostToolUse hooks -> tool_result
@@ -146,11 +146,11 @@ def trigger_hooks(event: HookEvent, *args: Any) -> str | None:
 
 ### 2. 把 Permission 变成 PreToolUse hook
 
-第三章 的 `check_permission()` 保留不动，只是换一个调用位置。
+第 03 章 的 `check_permission()` 保留不动，只是换一个调用位置。
 
 ```python
 def permission_hook(tool_name: str, tool_input: dict[str, Any]) -> str | None:
-    """把 第三章 的权限检查挂到 PreToolUse 生命周期。"""
+    """把 第 03 章 的权限检查挂到 PreToolUse 生命周期。"""
     allowed, reason = check_permission(tool_name, tool_input)
     if allowed:
         return None
@@ -265,7 +265,7 @@ Hooks 的核心思想是：
 核心循环保持稳定，扩展逻辑挂在生命周期事件上。
 ```
 
-第三章的 Permission 是一个很好的例子：之前它是工具执行前的一段固定逻辑；到了第四章，它变成了挂在 `PreToolUse` 上的 `permission_hook`。这就是 Harness Engineering 的味道：能力越来越多，但核心循环不要越来越乱。
+第 03 章的 Permission 是一个很好的例子：之前它是工具执行前的一段固定逻辑；到了第 04 章，它变成了挂在 `PreToolUse` 上的 `permission_hook`。这就是 Harness Engineering 的味道：能力越来越多，但核心循环不要越来越乱。
 
 真实 Claude Code 的 Hook 系统比这里复杂得多。它有更多事件，比如 `SessionStart`、`PreCompact`、`PostToolUseFailure`、`PermissionRequest`；也不一定是某个事件触发全部 hook，而是会经过 matcher / 条件过滤；hook 来源也可能来自 settings、plugin、skill、session、function hook。真实系统把 Hook 当成一套外接神经系统，用来接入安全策略、审计日志、自动验证、失败恢复和项目规则。
 

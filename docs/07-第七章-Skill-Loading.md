@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第六章 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出去，避免主上下文被搜索细节塞满。
+第 06 章 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出去，避免主上下文被搜索细节塞满。
 
 但还有一个更常见的上下文问题：**系统提示词会越长越大**。
 
@@ -18,7 +18,7 @@
 2. 不同领域的指令可能互相干扰。
 3. 新增能力必须改核心 system prompt，扩展性很差。
 
-所以 第七章 我实现一个最小版 Skill Loading。
+所以 第 07 章 我实现一个最小版 Skill Loading。
 
 它的核心思想是：
 
@@ -71,7 +71,7 @@ Harness 会做三件事：
 
 完整 skill 内容不直接塞进 system prompt，而是通过 `read_skill(name)` 按需读取。
 
-这和 Day06 的 Subagent 有点像：核心都是控制上下文。
+这和第 06 章的 Subagent 有点像：核心都是控制上下文。
 
 - Subagent 控制“调查过程”不要污染主上下文。
 - Skill Loading 控制“领域指令”不要污染每一次请求。
@@ -139,7 +139,7 @@ description: Help write clear project documentation
 
 ### 选择 Skill
 
-第七章 不引入 embeddings，也不做复杂召回，只用简单关键词打分：
+第 07 章 不引入 embeddings，也不做复杂召回，只用简单关键词打分：
 
 ```python
 def select_skills(query: str, skills: dict[str, Skill], limit: int = 3) -> list[Skill]:
@@ -151,7 +151,7 @@ def select_skills(query: str, skills: dict[str, Skill], limit: int = 3) -> list[
 
 这个实现很朴素，但它有一个好处：行为确定、容易理解、容易调试。
 
-第七章 的重点不是检索算法，而是 Harness 里多了一个新的阶段：
+第 07 章 的重点不是检索算法，而是 Harness 里多了一个新的阶段：
 
 ```text
 构造上下文之前，先决定本轮需要哪些技能。
@@ -197,11 +197,11 @@ Use read_skill(name) if you need the full instructions before applying a skill.
 write_file / edit_file / todo_write / task
 ```
 
-这延续了 Day06 的边界：子 Agent 可以调查和读取技能，但不能写文件，也不能递归创建更多子 Agent。
+这延续了第 06 章的边界：子 Agent 可以调查和读取技能，但不能写文件，也不能递归创建更多子 Agent。
 
 ### Agent Loop 的变化
 
-第七章 最关键的变化发生在用户输入之后：
+第 07 章 最关键的变化发生在用户输入之后：
 
 ```python
 trigger_hooks("UserPromptSubmit", query)
@@ -228,7 +228,7 @@ agent_loop(history, build_system_prompt(active_skills))
 python code/s07_skill_loading.py
 ```
 
-第七章的 `skills/` 目录下有两个示例技能：`python` 和 `docs`。试一个和 Python 相关的任务：
+第 07 章的 `skills/` 目录下有两个示例技能：`python` 和 `docs`。试一个和 Python 相关的任务：
 
 ```text
 帮我写一个 Python 函数，计算斐波那契数列第 n 项
@@ -262,7 +262,7 @@ python code/s07_skill_loading.py
 
 - **不要把所有 Skill 全塞进 system prompt。** 扫描到几个 SKILL.md 就全量拼接，很快会把上下文撑爆，而且当前任务可能只需要一个技能。正确做法是只注入摘要，完整内容按需读取。
 - **Skill 是指令，不是可执行插件。** Harness 只读取 Markdown，不执行里面的命令，也不 import Python 文件。`Skill = instructions, not executable code` 是一个重要的安全边界。
-- **不要扫描全局技能目录。** 如果默认扫描机器上的全局 skills，项目就不可复现——别人 clone 后运行结果取决于他本机装了什么。第七章只扫描工作区内的 `skills/`。
+- **不要扫描全局技能目录。** 如果默认扫描机器上的全局 skills，项目就不可复现——别人 clone 后运行结果取决于他本机装了什么。第 07 章只扫描工作区内的 `skills/`。
 - **没有 skills 目录时不能报错。** `discover_skills` 在目录不存在时返回空字典，让 Skill Loading 是可选增强，而不是启动前置条件。
 
 ## 小结

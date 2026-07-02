@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-第七章 解决的是 system prompt 变大的问题：不要把所有 Skill 永久塞进上下文，而是按任务动态加载。
+第 07 章 解决的是 system prompt 变大的问题：不要把所有 Skill 永久塞进上下文，而是按任务动态加载。
 
 但还有另一种上下文膨胀更难避免：**对话历史本身会越来越长**。
 
@@ -27,7 +27,7 @@
 3. 噪音影响当前决策。
 4. 最终触发模型 context limit，导致会话无法继续。
 
-所以 第八章 我实现一个最小版 Context Compact。
+所以 第 08 章 我实现一个最小版 Context Compact。
 
 它的目标不是长期记忆，而是当前会话续航：
 
@@ -219,7 +219,7 @@ messages[:]
 
 ### 插入 Agent Loop
 
-第八章 最关键的插入点在模型调用之前：
+第 08 章 最关键的插入点在模型调用之前：
 
 ```python
 while True:
@@ -268,7 +268,7 @@ python code/s08_context_compact.py
 
 - **Compact 不是 Memory。** 压缩摘要只存在当前 messages 里，程序退出就没了。它的目标是让当前会话继续跑下去，不是跨会话记忆。长期 Memory 留到下一章。
 - **不能压缩全部消息。** 最近窗口包含正在进行的工具调用、刚读到的文件、用户最新要求，这些不能被摘要化。必须保留 `COMPACT_KEEP_RECENT` 条原样不动。
-- **字符数≠token 数。** 中英文、代码、JSON 的 token 密度都不一样。但第八章的目标是讲清楚机制，字符数估算简单、无依赖、容易测试。真实系统可以换成 tokenizer 或 API 返回的 usage。
+- **字符数≠token 数。** 中英文、代码、JSON 的 token 密度都不一样。但第 08 章的目标是讲清楚机制，字符数估算简单、无依赖、容易测试。真实系统可以换成 tokenizer 或 API 返回的 usage。
 - **压缩输入本身也可能超长。** 如果历史已经非常长，直接拿去总结也可能超限。所以 `build_compact_prompt` 里还有一层 `MAX_COMPACT_INPUT_CHARS` 截断。
 
 ## 小结

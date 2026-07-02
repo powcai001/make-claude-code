@@ -6,27 +6,27 @@
 
 ## 本章解决什么问题？
 
-第五章 加上 `TodoWrite` 以后，Agent 已经能维护一份可见计划了。
+第 05 章 加上 `TodoWrite` 以后，Agent 已经能维护一份可见计划了。
 
 但计划可见之后，还会遇到另一个问题：**主上下文太容易被调查细节塞满**。
 
 比如用户说：
 
 ```text
-帮我理解这个仓库的 Day05 是怎么实现的，然后基于它继续做 第六章。
+帮我理解这个仓库的第五章是怎么实现的，然后基于它继续做第 06 章。
 ```
 
-这类任务通常要先读 README、读上一章代码、读上一章文档、对比当前骨架文件。真正有价值的是最后的结论：第六章 应该做什么、怎么做、哪些文件要改。
+这类任务通常要先读 README、读上一章代码、读上一章文档、对比当前骨架文件。真正有价值的是最后的结论：第 06 章 应该做什么、怎么做、哪些文件要改。
 
 如果所有搜索过程、文件片段、临时推理都塞进主 Agent 的上下文，主 Agent 很快就会被噪音淹没。
 
-所以 第六章 我实现一个最小版 Subagent：
+所以 第 06 章 我实现一个最小版 Subagent：
 
 > 主 Agent 可以把一个聚焦的调查任务交给子 Agent，子 Agent 独立阅读和分析，最后只把报告返回给主 Agent。
 
 它解决的不是“并发执行”问题，而是“上下文隔离”和“任务委派”问题。
 
-知乎上关于 Claude Code Subagent 的讨论里，经常把它的价值拆成四点：节省主上下文、限制工具权限、让子 Agent 专门化、必要时用更便宜的模型跑探索任务。第六章先不做模型路由和并发，只抓最核心的两个：**独立上下文 + 受限工具**。
+知乎上关于 Claude Code Subagent 的讨论里，经常把它的价值拆成四点：节省主上下文、限制工具权限、让子 Agent 专门化、必要时用更便宜的模型跑探索任务。第 06 章先不做模型路由和并发，只抓最核心的两个：**独立上下文 + 受限工具**。
 
 ## 核心概念
 
@@ -188,7 +188,7 @@ SUBAGENT_TOOLS = [tool for tool in TOOLS if tool["name"] in {"bash", "read_file"
 
 所以即使主 Agent 有 `write_file / edit_file / todo_write / task`，子 Agent 也看不到这些工具。
 
-这就是 第六章 的核心：
+这就是 第 06 章 的核心：
 
 ```text
 同一个 Harness，不同的上下文，不同的工具边界。
@@ -203,7 +203,7 @@ python code/s06_subagent.py
 试一个适合委派的任务：
 
 ```text
-请用 task 调查第三章 Permission 是怎么实现的，只返回结论报告，不要修改文件。
+请用 task 调查第 03 章 Permission 是怎么实现的，只返回结论报告，不要修改文件。
 ```
 
 你会看到主 Agent 调用 `task` 工具，类似：
@@ -211,7 +211,7 @@ python code/s06_subagent.py
 ```text
 > task: {
   'description': '调查 Permission 实现',
-  'prompt': '阅读第三章文档和 code/s03_permission.py，总结 Permission 的核心机制...'
+  'prompt': '阅读第 03 章文档和 code/s03_permission.py，总结 Permission 的核心机制...'
 }
 ```
 
