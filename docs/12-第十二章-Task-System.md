@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-Day 06 我已经做过一个 `task` 工具：主 Agent 可以把一段研究任务交给子 Agent，子 Agent 用自己的上下文调查完，再把报告返回给主 Agent。
+第六章 我已经做过一个 `task` 工具：主 Agent 可以把一段研究任务交给子 Agent，子 Agent 用自己的上下文调查完，再把报告返回给主 Agent。
 
 这个版本能跑，但还很粗糙。它本质上只是：
 
@@ -23,13 +23,13 @@ task(description, prompt) -> run_subagent() -> report string
 
 真实 Agent 里的 Task 不只是“再开一个模型调用”。它更像一个由 Harness 管理的小型任务系统：创建任务、分配上下文、限制工具、记录状态、保存结果，再把结果交还给主 Agent。
 
-所以 Day 12 我把 Subagent 调用升级成一个最小 Task System。
+所以 第十二章 我把 Subagent 调用升级成一个最小 Task System。
 
 > Task System 管理子 Agent 的生命周期，让任务从一次性函数调用变成可跟踪、可查看、可复盘的结构化对象。
 
 ## 核心概念
 
-Day 12 的流程是：
+第十二章 的流程是：
 
 ```text
 task tool call
@@ -61,7 +61,7 @@ queued -> running -> completed / failed
 
 完整实现见：`code/s12_task_system.py`
 
-Day 12 继续基于 Day 11，所以 Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在任务记录和任务查询。
+第十二章 继续基于 第十一章，所以 Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在任务记录和任务查询。
 
 ### TaskRecord
 
@@ -125,9 +125,9 @@ def new_task_record(description: str, prompt: str) -> TaskRecord:
 
 ### 运行任务
 
-Day 11 里 `run_subagent()` 接收的是 `description` 和 `prompt`。
+第十一章 里 `run_subagent()` 接收的是 `description` 和 `prompt`。
 
-Day 12 改成接收一个 `TaskRecord`：
+第十二章 改成接收一个 `TaskRecord`：
 
 ```python
 def run_subagent(record: TaskRecord, max_turns: int = 6) -> str:
@@ -197,7 +197,7 @@ def run_task(description: str, prompt: str) -> str:
     )
 ```
 
-注意这里和 Day 11 的 Error Recovery 接上了：如果子任务抛异常，会被标记为 `failed`，并通过 `attach_recovery_hint()` 返回恢复建议。
+注意这里和 第十一章 的 Error Recovery 接上了：如果子任务抛异常，会被标记为 `failed`，并通过 `attach_recovery_hint()` 返回恢复建议。
 
 ### task_list 和 task_read
 
@@ -237,15 +237,15 @@ TodoWrite 和 Task System 都叫“任务”，但它们不是一回事。
 
 Todo 可以写“调查路由实现”；Task 则是真正启动一个隔离上下文去调查路由实现。
 
-如果把它们混在一起，Todo 列表会被子任务生命周期污染，Task 结果也会缺少执行细节。所以 Day 12 我单独引入 `TASKS`，不复用 `TODOS`。
+如果把它们混在一起，Todo 列表会被子任务生命周期污染，Task 结果也会缺少执行细节。所以 第十二章 我单独引入 `TASKS`，不复用 `TODOS`。
 
 ### 坑 2：只返回报告不够
 
-Day 06 的 `task` 工具只返回子 Agent 报告。
+第六章 的 `task` 工具只返回子 Agent 报告。
 
 但真实使用时，主 Agent 经常需要知道：这个报告来自哪个任务？跑了几轮？有没有失败？能不能稍后再看？
 
-所以 Day 12 的 `run_task()` 返回里明确包含任务 ID，并提示可以用 `task_read` 查看完整记录。
+所以 第十二章 的 `run_task()` 返回里明确包含任务 ID，并提示可以用 `task_read` 查看完整记录。
 
 ### 坑 3：先做同步生命周期，不急着做并发
 
@@ -255,9 +255,11 @@ Day 06 的 `task` 工具只返回子 Agent 报告。
 
 所以我先保持同步执行，只把生命周期记录打通。这样下一步要加后台运行时，已经有 `TaskRecord` 这个稳定抽象可以承载状态变化。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里的 Task System 通常对应这些能力：
+第十二章 的关键词是：**任务生命周期**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里的 Task System 通常对应这些能力：
 
 - 启动一个独立上下文的子 Agent。
 - 给子 Agent 限定工具和权限。
@@ -283,9 +285,6 @@ Task tool -> isolated subagent -> tracked TaskRecord -> task_list/task_read
 
 > Task 不是普通函数调用，而是由 Harness 管理的可追踪执行单元。
 
-## 小结
-
-Day 12 的关键词是：**任务生命周期**。
 
 Subagent 解决“让另一个模型上下文去调查问题”；Task System 解决“如何管理这些调查任务”。
 

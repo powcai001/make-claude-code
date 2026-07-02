@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-前 10 天的 Agent 已经有了不少能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory、System Prompt 组装。
+前 10 章的 Agent 已经有了不少能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory、System Prompt 组装。
 
 但只要真正跑起来，就会遇到一个很现实的问题：**错误一定会发生**。
 
@@ -15,13 +15,13 @@
 1. 原样重试同一个失败工具调用。
 2. 放弃当前任务，直接告诉用户“失败了”。
 
-真实 Agent 不能这样。错误不是终点，而应该变成下一轮决策的输入。所以 Day 11 我实现一个最小版 Error Recovery：
+真实 Agent 不能这样。错误不是终点，而应该变成下一轮决策的输入。所以 第十一章 我实现一个最小版 Error Recovery：
 
 > 把工具和模型调用中的错误分类、记录，并附带恢复建议返回给模型，让 Agent 能改变策略继续推进。
 
 ## 核心概念
 
-Day 11 的流程是：
+第十一章 的流程是：
 
 ```text
 model/tool error
@@ -55,7 +55,7 @@ model/tool error
 
 完整实现见：`code/s11_error_recovery.py`
 
-Day 11 继续基于 Day 10，所以 System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在错误分类、恢复提示和模型调用重试。
+第十一章 继续基于 第十章，所以 System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在错误分类、恢复提示和模型调用重试。
 
 ### ErrorRecord
 
@@ -181,7 +181,7 @@ trigger_hooks("PostToolUse", block.name, block.input, output)
 
 ### 模型调用重试
 
-工具错误是一类，模型 API 错误是另一类。Day 11 我给模型调用包了一层：
+工具错误是一类，模型 API 错误是另一类。第十一章 我给模型调用包了一层：
 
 ```python
 def call_model_with_retries(**kwargs: Any) -> Any:
@@ -231,7 +231,7 @@ def run_show_errors() -> str:
     return "\n".join(lines)
 ```
 
-它的作用和 Day 10 的 `show_system_prompt` 类似：让 Harness 的内部状态可观察。
+它的作用和 第十章 的 `show_system_prompt` 类似：让 Harness 的内部状态可观察。
 
 ## 我踩的坑
 
@@ -250,7 +250,7 @@ except Exception as exc:
 
 因为模型拿到的仍然只是一段非结构化错误文本，它不知道应该换路径、改参数、询问用户，还是稍后重试。
 
-所以 Day 11 的关键不是“捕获异常”，而是“把异常转成可行动反馈”。
+所以 第十一章 的关键不是“捕获异常”，而是“把异常转成可行动反馈”。
 
 ### 坑 2：不能所有错误都重试
 
@@ -272,9 +272,11 @@ Do not retry the same action. Explain why it was blocked or ask the user for a s
 
 这也是 Error Recovery 和安全边界的关系：恢复不是绕过，而是换成更安全、更明确的路径。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里，Error Recovery 会散落在很多地方：
+第十一章 的关键词是：**可恢复失败**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，Error Recovery 会散落在很多地方：
 
 - 工具 schema 校验失败后的错误消息。
 - Bash 命令非零退出码和 stderr 截断。
@@ -305,9 +307,6 @@ Do not retry the same action. Explain why it was blocked or ask the user for a s
 
 > Harness 不应该只是把错误转成字符串，而应该帮助模型理解错误性质，并给出下一步可执行策略。
 
-## 小结
-
-Day 11 的关键词是：**可恢复失败**。
 
 一个 Agent 真正能用，不是因为它永远不犯错，而是因为它犯错后能知道错在哪里、下一步该怎么改，并且不会盲目重复同一个失败动作。
 

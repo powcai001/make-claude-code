@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-Day 07 解决的是 system prompt 变大的问题：不要把所有 Skill 永久塞进上下文，而是按任务动态加载。
+第七章 解决的是 system prompt 变大的问题：不要把所有 Skill 永久塞进上下文，而是按任务动态加载。
 
 但还有另一种上下文膨胀更难避免：**对话历史本身会越来越长**。
 
@@ -27,11 +27,13 @@ Day 07 解决的是 system prompt 变大的问题：不要把所有 Skill 永久
 3. 噪音影响当前决策。
 4. 最终触发模型 context limit，导致会话无法继续。
 
-所以 Day 08 我实现一个最小版 Context Compact。
+所以 第八章 我实现一个最小版 Context Compact。
 
 它的目标不是长期记忆，而是当前会话续航：
 
 > 当 messages 太长时，把较早历史压缩成摘要，保留最近窗口，然后继续对话。
+
+知乎上关于 Claude Code 上下文压缩的深度文章里有一个核心观点：**压缩的目标不是省 token，而是保护模型的注意力。** 研究表明，上下文塞到 70% 以上，模型的中段失忆和指令漂移就会明显恶化——这叫 **Context Rot（上下文腐烂）**。模型不是真的"忘了"，是注意力被稀释、信号被噪声淹没。所以压缩系统本质上是一个信号工程师：把无关紧要的旧工具输出降为摘要，让最近的对话不被淹没。
 
 ## 核心概念
 
@@ -217,7 +219,7 @@ messages[:]
 
 ### 插入 Agent Loop
 
-Day08 最关键的插入点在模型调用之前：
+第八章 最关键的插入点在模型调用之前：
 
 ```python
 while True:
@@ -237,114 +239,55 @@ while True:
 
 如果超过阈值，就把旧消息压缩成摘要，再继续调用模型。
 
+运行方式：
+
+```bash
+python code/s08_context_compact.py
+```
+
+试一个会产生大量工具输出的任务，让对话变长：
+
+```text
+读取 README.md，然后读取 code/s01_agent_loop.py 的前 50 行，总结一下
+```
+
+多轮对话后，当 messages 总字符数超过 `COMPACT_TRIGGER_CHARS`（默认 30000）时，终端会显示：
+
+```text
+[compact] context pressure high, compacting...
+[compact] done. messages reduced.
+```
+
+这表示 Harness 把旧消息压缩成了一条 `[compact summary]`，只保留最近 6 条消息原样不动。模型接下来看到的是：摘要 + 最近窗口，而不是全部历史。
+
+你可以用 `compact` 工具手动触发压缩，也可以让它自动触发。这就是这一章想让用户"感受到"的东西：**长会话不会因为 messages 无限增长而崩掉，Harness 会在压力过大时自动瘦身。**
+
 ## 我踩的坑
 
-### 坑 1：把 Compact 当成 Memory
+这一章的坑，抓住几件事就够了：
 
-Context Compact 很像“记忆”，但它不是 Memory。
-
-Compact 的摘要只存在当前 `messages` 里，程序退出就没了。它的目标是让当前会话继续跑下去。
-
-真正跨会话保存、长期可检索的 Memory，留到 Day09 再做。
-
-### 坑 2：压缩所有消息
-
-如果把全部 messages 都压缩成一段摘要，模型会丢掉最近状态。
-
-尤其是工具调用场景里，最近几轮可能包含：
-
-- 刚刚读到的文件内容
-- 刚刚失败的命令输出
-- 用户最新追加的约束
-- 当前正在执行的 todo
-
-这些内容不能轻易摘要化。
-
-所以我保留 recent window：
-
-```python
-old_messages = messages[:-COMPACT_KEEP_RECENT]
-recent_messages = messages[-COMPACT_KEEP_RECENT:]
-```
-
-### 坑 3：用字符数冒充 token 数
-
-字符数不等于 token 数。
-
-中文、英文、代码、JSON 的 token 密度都不一样。
-
-但 Day08 的目标是讲清楚机制，而不是实现精确计费器。字符数估算的优点是简单、无依赖、容易测试。
-
-真实系统里可以替换成 tokenizer 或模型 API 返回的 usage。
-
-### 坑 4：压缩输入本身也会超长
-
-如果历史已经非常长，直接把所有旧消息发给总结模型，也可能超过上下文限制。
-
-所以 `build_compact_prompt` 里还有一层：
-
-```python
-MAX_COMPACT_INPUT_CHARS = 40_000
-```
-
-这不是完美方案，但能保证最小实现不会因为“为了压缩而再次超长”。
-
-## 对应真实 Claude Code 的哪里
-
-真实 Claude Code / Codex 这类 Agent Harness 都需要 context management。
-
-用户感觉像是在一段长会话里连续工作，但背后 Harness 必须持续管理：
-
-- 哪些上下文仍然重要
-- 哪些工具结果可以压缩
-- 哪些最近消息必须保留
-- 什么时候触发自动 compact
-- compact 后如何让模型继续同一个任务
-
-Day07 和 Day08 的区别是：
-
-```text
-Day07 Skill Loading：进入上下文前，选择需要加载什么。
-Day08 Context Compact：上下文变长后，选择如何压缩历史。
-```
-
-我这一章的实现和真实系统的相同点是：
-
-- 都会估算上下文压力。
-- 都会把旧消息总结成 compact summary。
-- 都会保留最近窗口。
-- 都把 compact 放在 Harness 层，而不是让用户手动管理所有历史。
-
-不同点是：
-
-- 真实系统会使用更准确的 token 估算。
-- 真实系统会更小心处理 tool_use / tool_result 配对。
-- 真实系统可能有手动 compact、自动 compact、恢复机制等多种策略。
-- 我这里不持久化摘要，不做长期 Memory。
-
-这些简化是为了让 Day08 聚焦一个核心机制：
-
-```text
-长会话需要压缩历史，而不是无限追加 messages。
-```
+- **Compact 不是 Memory。** 压缩摘要只存在当前 messages 里，程序退出就没了。它的目标是让当前会话继续跑下去，不是跨会话记忆。长期 Memory 留到下一章。
+- **不能压缩全部消息。** 最近窗口包含正在进行的工具调用、刚读到的文件、用户最新要求，这些不能被摘要化。必须保留 `COMPACT_KEEP_RECENT` 条原样不动。
+- **字符数≠token 数。** 中英文、代码、JSON 的 token 密度都不一样。但第八章的目标是讲清楚机制，字符数估算简单、无依赖、容易测试。真实系统可以换成 tokenizer 或 API 返回的 usage。
+- **压缩输入本身也可能超长。** 如果历史已经非常长，直接拿去总结也可能超限。所以 `build_compact_prompt` 里还有一层 `MAX_COMPACT_INPUT_CHARS` 截断。
 
 ## 小结
 
 本章实现了一个最小版 Context Compact。
 
+它的核心不是压缩算法，而是 Harness 里多了一个阶段：**每次调用模型前，先检查上下文压力，压力过大就压缩旧历史。**
+
+```text
+旧消息 -> 压缩成摘要    最近窗口 -> 原样保留
+```
+
+真实 Claude Code 有五级压缩策略（Snip 剪裁 → Microcompact 微压缩 → Context Collapse 折叠 → Autocompact 自动压缩 → Reactive Compact 应急压缩），从轻到重逐级升级。核心原则是**渐进退化**：能裁掉的内容先裁掉，实在不够了再上更重的方案。但无论几级，本质都是同一个问题：**这一轮对话里，模型应该把注意力放在什么上面？**
+
 现在我的 Agent Harness 变成了：
 
 ```text
-Agent Loop
-+ Tool System
-+ Permission Gate
-+ Lifecycle Hooks
-+ TodoWrite
-+ Subagent / Task
-+ Skill Loading
-+ Context Compact
+Agent Loop + Tool System + Permission Gate + Lifecycle Hooks
++ TodoWrite + Subagent + Skill Loading + Context Compact
 ```
 
-Context Compact 的核心思想是：
-
-> 当前会话可以变长，但 messages 不能无限增长；旧上下文要压缩成摘要，最近上下文要原样保留。
+下一章要解决的问题是：压缩只是当前会话续命，真正跨会话的记忆怎么做？这就是 Memory。

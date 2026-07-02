@@ -6,9 +6,11 @@
 
 ## 本章解决什么问题？
 
-Day 04 结束时，我的 Agent 已经有了一个比较像样的 Harness：模型负责决策，工具负责执行，权限和日志通过 Hooks 挂在生命周期上。
+第四章 结束时，我的 Agent 已经有了一个比较像样的 Harness：模型负责决策，工具负责执行，权限和日志通过 Hooks 挂在生命周期上。
 
 但它还缺一个很关键的东西：**可见的任务状态**。
+
+长流程里，模型最容易遇到的问题不是不会做，而是做着做着忘了自己在哪：目标变模糊、已经完成的步骤被对话淹没、下一步焦点不清楚。知乎上讨论 Claude Code TodoWrite 时常提到三个词：**专注、灵活、透明**。专注，是让模型始终知道当前目标；灵活，是执行中可以动态调整计划；透明，是用户能看见进度，而不是只能相信模型说“我在做”。
 
 如果用户说：
 
@@ -23,7 +25,7 @@ Day 04 结束时，我的 Agent 已经有了一个比较像样的 Harness：模�
 3. 对话变长后，模型容易忘记前面已经完成了什么。
 4. 多步任务中断后，很难恢复现场。
 
-所以 Day 05 我先实现一个最小版 `TodoWrite`。
+所以 第五章 我先实现一个最小版 `TodoWrite`。
 
 它不负责执行任务，也不是一个复杂 Planner。它只做一件事：
 
@@ -101,7 +103,7 @@ class TodoItem(TypedDict):
     priority: TodoPriority
 
 
-# TodoWrite 在 Day 05 先只做内存态，后续 Memory 章节再考虑持久化。
+# TodoWrite 在 第五章 先只做内存态，后续 Memory 章节再考虑持久化。
 TODOS: list[TodoItem] = []
 ```
 
@@ -196,111 +198,74 @@ tool_use(todo_write) -> tool_result
 
 区别只在于它改变的是 Harness 的内存状态，而不是文件系统或 shell 环境。
 
+运行方式：
+
+```bash
+python code/s05_todo_write.py
+```
+
+试一个多步任务：
+
+```text
+先用 todo_write 列出计划：创建 hello.py，写 greet(name) 函数，运行验证，最后总结结果。
+```
+
+你会看到模型先调用 `todo_write`，把计划写成结构化状态：
+
+```text
+□ [high] 创建 hello.py
+□ [high] 实现 greet(name)
+□ [medium] 运行验证
+□ [low] 总结结果
+```
+
+当它开始执行某一步时，会把那一项改成 `in_progress`：
+
+```text
+▶ [high] 创建 hello.py
+□ [high] 实现 greet(name)
+□ [medium] 运行验证
+□ [low] 总结结果
+```
+
+完成后再整体写回新状态：
+
+```text
+✓ [high] 创建 hello.py
+▶ [high] 实现 greet(name)
+□ [medium] 运行验证
+□ [low] 总结结果
+```
+
+结束时，`Stop` hook 还会打印当前 todo 状态。用户能直观看到：Agent 现在做到哪一步、下一步是什么、有没有跑偏。
+
+这就是这一章想让用户"感受到"的东西：**计划不再只藏在模型的自然语言里，而是变成 Harness 和用户都看得见的结构化状态。**
+
 ## 我踩的坑
 
-### 坑 1：把 TodoWrite 设计成“追加一条任务”
+这一章的坑，抓住几件事就够了：
 
-一开始很容易把它想成：
-
-```python
-add_todo(content, status, priority)
-```
-
-这样写确实简单，但很快会遇到问题。
-
-比如任务状态从 `in_progress` 变成 `completed`，到底是追加一条新记录，还是修改旧记录？如果追加，就会出现两条同名任务。如果修改，又要引入 id、查找、更新、删除等一套操作。
-
-后来我改成“每次传完整列表”。
-
-这样 Harness 不需要理解模型的局部操作，只需要接收最新状态：
-
-```text
-旧状态 -> 新状态
-```
-
-这和真实 Claude Code 的 `TodoWrite` 更接近。
-
-### 坑 2：允许多个 `in_progress`
-
-如果不限制 `in_progress` 数量，模型很容易写出：
-
-```text
-1. ▶ 实现代码
-2. ▶ 写文档
-3. ▶ 跑测试
-```
-
-这看起来都在做，但实际上等于没有当前焦点。
-
-Agent 的多步执行需要一个明确的“现在正在做什么”。所以我在 handler 里加了检查：
-
-```python
-in_progress_count = sum(1 for todo in normalized if todo["status"] == "in_progress")
-if in_progress_count > 1:
-    return "Error: todo list can have at most one in_progress item."
-```
-
-这个约束很小，但会显著提高任务状态的可读性。
-
-### 坑 3：把 TodoWrite 当成执行器
-
-TodoWrite 不是执行器。
-
-它不会帮 Agent 写文件、跑命令、提交代码。它只是记录计划。
-
-真正执行任务的还是之前几章实现的工具：
-
-```text
-bash / read_file / write_file / edit_file
-```
-
-TodoWrite 的价值是让这些动作被一个清晰的任务状态串起来。
-
-## 对应真实 Claude Code 的哪里
-
-真实 Claude Code 里有一个非常重要的工具就叫 `TodoWrite`。
-
-它的作用不是写项目文件，而是维护当前会话的任务列表。Claude Code 还会在系统提示里要求模型：
-
-- 复杂任务要主动创建 todo list。
-- 开始某项任务时把它标成 `in_progress`。
-- 完成后及时标成 `completed`。
-- 不要同时有多个 `in_progress`。
-
-我这章实现的版本和真实系统的相同点是：
-
-1. 都把计划变成结构化状态。
-2. 都使用 `pending / in_progress / completed` 这类状态机。
-3. 都要求一次提交完整任务列表。
-4. 都把 TodoWrite 做成普通工具，由模型主动调用。
-
-不同点是：
-
-1. 我这里只存在内存里，程序退出就丢失。
-2. 我没有做 UI 展示，只是在终端和 Stop hook 里打印。
-3. 我没有实现跨会话恢复。
-4. 我没有把 TodoWrite 和更复杂的 Planner / Task System 绑定。
-
-这些简化是故意的。
-
-Day 05 的目标不是实现完整任务系统，而是先补上一个关键 Harness 能力：
-
-```text
-Agent 的计划必须可见、可校验、可更新。
-```
+- **TodoWrite 不是追加日志，而是当前计划快照。** 如果只提供 `add_todo()`，后面更新状态会很麻烦：到底是追加一条，还是修改旧任务？本章选择每次提交完整列表，让 Harness 永远相信一份最新状态。
+- **只能有一个 `in_progress`。** `in_progress` 表示当前焦点。多个任务同时进行中，用户和 Harness 都不知道 Agent 此刻到底在做哪一步。
+- **TodoWrite 不是执行器。** 它不会写文件、跑命令、提交代码；真正执行任务的还是 `bash/read_file/write_file/edit_file`。TodoWrite 只是把这些动作放进一条清晰的计划线里。
+- **TodoWrite 现在还是内存态。** 程序一退出就丢失，不能跨会话恢复。真正持久化要等后面的 Memory / Task System。
 
 ## 小结
 
 本章实现了一个最小版 `TodoWrite`。
 
-现在我的 Agent 不只是能调用工具，还能维护一份可见的任务计划：
+它给 Agent 补上的不是新执行能力，而是**可观察的工作状态**：
+
+```text
+用户任务 -> 模型拆计划 -> todo_write 写入状态 -> 执行中不断更新
+```
+
+真实 Claude Code 里也有 TodoWrite。系统会鼓励模型在复杂任务前创建 todo list，开始某项任务时标记 `in_progress`，完成后及时标记 `completed`，并且不要同时有多个 `in_progress`。这背后的目标不是形式主义，而是解决长流程里的上下文腐烂：让模型专注，让用户透明地看到进度，也让 Harness 能在 Stop hook、压缩、恢复等位置拿到结构化任务状态。
+
+这章之后，我的 Agent 不再只是“看到一步做一步”，而是开始拥有显式的工作状态：
 
 ```text
 Agent Loop + Tool System + Permission Gate + Lifecycle Hooks + TodoWrite
 ```
 
-这一步很重要，因为从这里开始，Agent 不再只是“看到一步做一步”，而是开始拥有显式的工作状态。
-
-TodoWrite 的核心思想是：
-
-> 计划不要只藏在模型上下文里，要变成 Harness 可以观察和约束的结构化状态。
+下一章要解决的问题是：当任务变复杂时，能不能把一部分工作交给一个独立上下文里的小 Agent 去做？这就是 Subagent。

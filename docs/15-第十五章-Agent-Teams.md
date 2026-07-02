@@ -6,17 +6,17 @@
 
 ## 本章解决什么问题？
 
-Day 12 到 Day 14 逐步把单个子 Agent 做成了可跟踪、可后台运行、可定时触发的 Task System。但这些能力仍然围绕“一个子 Agent 做一件事”。
+第十二章 到 第十四章 逐步把单个子 Agent 做成了可跟踪、可后台运行、可定时触发的 Task System。但这些能力仍然围绕“一个子 Agent 做一件事”。
 
 真实复杂任务经常不是一个视角能解决的。比如改一个关键模块时，我希望有人负责找相关代码，有人负责审查风险，有人负责想测试方案。如果只派一个通用子 Agent，它可能会把这些工作混在一起，报告看起来全面，但每个角度都不够深入。
 
-所以 Day 15 我实现一个最小版 Agent Teams：
+所以 第十五章 我实现一个最小版 Agent Teams：
 
 > 把多个带角色的子 Agent 编组成团队，围绕同一个目标分别调查，再由 Harness 汇总成一份团队报告。
 
 ## 核心概念
 
-Day 15 的流程是：
+第十五章 的流程是：
 
 ```text
 team_run(objective)
@@ -49,7 +49,7 @@ team_run(objective)
 
 完整实现见：`code/s15_agent_teams.py`
 
-Day 15 继续基于 Day 14，所以 Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在团队成员、团队运行记录和报告聚合。
+第十五章 继续基于 第十四章，所以 Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在团队成员、团队运行记录和报告聚合。
 
 ### TeamMember 和 TeamRun
 
@@ -130,7 +130,7 @@ def run_team(objective: str, members: list[dict[str, Any]] | None = None) -> str
         return f"Team {run['id']} completed.\n\n{final_report}"
 ```
 
-这个版本故意顺序执行，而不是并发。因为 Day 15 的目标是先把“团队抽象”和“结果汇总”跑通。并发团队可以以后复用 Day 13 的后台任务机制继续扩展。
+这个版本故意顺序执行，而不是并发。因为 第十五章 的目标是先把“团队抽象”和“结果汇总”跑通。并发团队可以以后复用 第十三章 的后台任务机制继续扩展。
 
 ### 聚合报告
 
@@ -195,13 +195,15 @@ def aggregate_team_report(run: TeamRun, member_outputs: list[tuple[TeamMember, s
 
 ### 坑 3：先顺序执行，不急着并发
 
-Day 13 已经有后台任务，但 Day 15 我没有直接做并发团队。
+第十三章 已经有后台任务，但 第十五章 我没有直接做并发团队。
 
 原因是并发会引入更多状态同步、错误合并和报告顺序问题。先顺序执行，可以把团队记录、成员提示词和聚合报告打稳。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类系统里，不一定直接叫 Agent Teams，但会有类似模式：
+第十五章 的关键词是：**角色化协作**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类系统里，不一定直接叫 Agent Teams，但会有类似模式：
 
 - 一个主 Agent 把调查拆给多个子 Agent。
 - 不同子 Agent 使用不同系统提示、工具范围或角色。
@@ -226,9 +228,6 @@ team objective -> role-specific subagents -> tracked tasks -> aggregated report
 
 > 多 Agent 协作不是简单复制多个模型调用，而是 Harness 用角色、任务记录和聚合机制组织出来的协作流程。
 
-## 小结
-
-Day 15 的关键词是：**角色化协作**。
 
 Subagent 解决“派一个人调查”；Task System 解决“记录这个人做了什么”；Agent Teams 解决“派一组不同角色的人，从多个角度看同一个问题”。
 

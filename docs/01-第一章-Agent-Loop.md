@@ -53,6 +53,19 @@ Messages append result ---> Model again
 Done
 ```
 
+这个循环不是凭空设计的，它对应一个经典模式：**ReAct（Reason + Act）**。
+
+ReAct 的核心想法是：让模型不要一次性把答案全说出来，而是**先推理一步（Reason），再采取一个动作（Act），看到动作结果后再推理下一步**，如此循环直到任务完成。映射到本章：
+
+```text
+Reason  →  模型在 messages 上判断下一步该做什么
+Act     →  模型发出 tool_use，Harness 执行
+Observe →  工具结果作为 tool_result 回到 messages
+然后再 Reason ...
+```
+
+第一章的 Agent Loop，就是 ReAct 这个模式的最小可运行实现。理解了这一点，后面看到 planning、memory、reflection 这些概念时，你会发现它们都是在往这个"推理-行动-观察"的循环里加东西，而不是另起炉灶。
+
 几个核心概念：
 
 - `messages`：对话历史，也是 Agent 的短期状态。模型每次判断下一步，都依赖这份上下文。

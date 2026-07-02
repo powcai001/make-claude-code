@@ -16,13 +16,13 @@
 
 如果所有改动都直接落到主工作区，用户就得时刻盯着、随时回滚。这违背了“先在沙盒里试一下”的工程直觉。
 
-所以 Day 18 我实现一个最小版 Worktree Isolation：
+所以 第十八章 我实现一个最小版 Worktree Isolation：
 
 > 让 Harness 可以在 `.agent_worktrees/` 下创建隔离工作目录，task / subagent 可以指定在其中运行，bash 的 cwd 临时切到隔离目录，结束后再恢复主工作区。
 
 ## 核心概念
 
-Day 18 的流程是：
+第十八章 的流程是：
 
 ```text
 worktree_create -> WorktreeRecord(wt-0001)
@@ -51,7 +51,7 @@ worktree_create -> WorktreeRecord(wt-0001)
 
 完整实现见：`code/s18_worktree_isolation.py`
 
-Day 18 继续基于 Day 17，所以 Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 worktree 记录、线程局部 cwd 和 worktree 工具。
+第十八章 继续基于 第十七章，所以 Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 worktree 记录、线程局部 cwd 和 worktree 工具。
 
 ### WorktreeRecord
 
@@ -143,7 +143,7 @@ def run_bash(command: str) -> str:
     result = subprocess.run(command, shell=True, cwd=cwd, ...)
 ```
 
-为什么用线程局部？因为 Day 13 之后有后台任务，多个 subagent 可能并发跑。如果用全局变量切换 cwd，一个任务会影响另一个。线程局部保证每个任务在自己的线程里看到自己的 cwd。
+为什么用线程局部？因为 第十三章 之后有后台任务，多个 subagent 可能并发跑。如果用全局变量切换 cwd，一个任务会影响另一个。线程局部保证每个任务在自己的线程里看到自己的 cwd。
 
 ### task 支持 worktree
 
@@ -198,7 +198,7 @@ def run_worktree_remove(wt_id: str) -> str:
 
 ### worktree 工具
 
-Day 18 新增四个工具：
+第十八章 新增四个工具：
 
 - `worktree_create`：创建隔离目录。
 - `worktree_list`：列出所有 worktree。
@@ -236,9 +236,11 @@ Day 18 新增四个工具：
 
 所以我加了 `is_inside_workspace()` 校验，只有路径确实落在 `WORKDIR/.agent_worktrees/` 下才允许删。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里，Worktree Isolation 通常体现在：
+第十八章 的关键词是：**隔离执行**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，Worktree Isolation 通常体现在：
 
 - `git worktree` 作为实验分支的载体。
 - 子 Agent 或长任务在独立目录运行，避免污染主仓库。
@@ -264,8 +266,5 @@ worktree_create -> task(worktree_id) -> thread-local cwd -> worktree_remove
 
 > 隔离执行的本质，是让一段任务运行在一个受控的、可丢弃的工作目录里，而不是直接改主工作区。
 
-## 小结
-
-Day 18 的关键词是：**隔离执行**。
 
 通过 `WorktreeRecord`、`CwdStack`、`worktree_create` 和 `task(worktree_id=...)`，Agent Harness 开始支持“先在沙盒里试一下”。这为后面更安全的自主重构、并行实验和回滚式工作流打下了基础。

@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-前 9 天我一直在往 Agent 里加能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory。
+前 9 章我一直在往 Agent 里加能力：工具调用、权限、Hook、TodoWrite、Subagent、Skill Loading、Context Compact、Memory。
 
 这些能力加完之后，一个新的问题出现了：**谁来告诉模型这些能力怎么用？**
 
@@ -17,7 +17,7 @@ You are a coding agent working in ...
 Use the available tools to solve the user's task.
 ```
 
-这在 Day 01 够用，但到了 Day 10 就不够了。因为模型需要知道：
+这在 第一章 够用，但到了 第十章 就不够了。因为模型需要知道：
 
 - 它是谁。
 - 当前工作目录在哪里。
@@ -35,13 +35,13 @@ Use the available tools to solve the user's task.
 3. 上下文预算不清楚，prompt 可能无限膨胀。
 4. 不同来源的指令没有优先级，冲突时模型容易乱。
 
-所以 Day 10 我把 system prompt 从“一段字符串”升级成“可组装的控制面”。
+所以 第十章 我把 system prompt 从“一段字符串”升级成“可组装的控制面”。
 
 > System Prompt 不只是提示词文本，而是 Harness 在每轮模型调用前，根据身份、规则、工具、Memory、Skill 等来源动态组装出来的运行时配置。
 
 ## 核心概念
 
-Day 10 的流程是：
+第十章 的流程是：
 
 ```text
 identity / behavior / tool policy / memory / skills
@@ -61,8 +61,8 @@ system prompt 不再是一整段不可拆的字符串，而是多个片段：
 - `identity`：Agent 身份和工作目录。
 - `core_behavior`：基础行为规则。
 - `tool_policy`：工具使用边界。
-- `persistent_memory`：Day 09 的持久化记忆。
-- `active_skills`：Day 07 的动态技能摘要。
+- `persistent_memory`：第九章 的持久化记忆。
+- `active_skills`：第七章 的动态技能摘要。
 
 第二，priority。
 
@@ -72,19 +72,19 @@ system prompt 不再是一整段不可拆的字符串，而是多个片段：
 
 第三，budget。
 
-每个 section 都有自己的字符预算，总 prompt 也有总预算。真实系统会按 token 估算，我这里仍然用字符数近似，和 Day 08 的 Context Compact 保持一致。
+每个 section 都有自己的字符预算，总 prompt 也有总预算。真实系统会按 token 估算，我这里仍然用字符数近似，和 第八章 的 Context Compact 保持一致。
 
 ## 我的实现
 
 完整实现见：`code/s10_system_prompt.py`
 
-Day 10 的实现继续基于 Day 09，所以 Memory、Skill、Compact 等机制都还在。变化集中在 system prompt 的构造方式。
+第十章 的实现继续基于 第九章，所以 Memory、Skill、Compact 等机制都还在。变化集中在 system prompt 的构造方式。
 
 ### 拆分静态规则
 
-Day 09 之前，我用一个 `SYSTEM` 字符串承载所有静态规则。
+第九章 之前，我用一个 `SYSTEM` 字符串承载所有静态规则。
 
-Day 10 我把它拆成三块：
+第十章 我把它拆成三块：
 
 ```python
 BASE_IDENTITY = f"You are a coding agent working in {WORKDIR}."
@@ -145,7 +145,7 @@ def build_prompt_sections(active_skills: list[Skill]) -> list[PromptSection]:
     return [section for section in raw_sections if section is not None]
 ```
 
-这里能看到 Day 07 和 Day 09 的机制都被纳入了 system prompt 组装流程：
+这里能看到 第七章 和 第九章 的机制都被纳入了 system prompt 组装流程：
 
 - Skill Loading 产生 `active_skills`。
 - Memory 产生 `persistent_memory`。
@@ -254,9 +254,11 @@ System prompt 动态组装之后，模型行为变差时很难判断原因：
 
 这让我可以直接看到最终 prompt，而不是靠猜。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类系统里，system prompt 往往不是单个手写字符串，而是由多种上下文拼出来的：
+第十章 的关键词是：**结构化组装**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类系统里，system prompt 往往不是单个手写字符串，而是由多种上下文拼出来的：
 
 - 基础身份和安全边界。
 - 工具使用说明。
@@ -269,7 +271,7 @@ System prompt 动态组装之后，模型行为变差时很难判断原因：
 
 这些内容来自不同地方，但最终都会汇入模型调用的上下文。
 
-我这个 Day 10 最小实现对应的是这条链路：
+我这个 第十章 最小实现对应的是这条链路：
 
 ```text
 Harness state + rules + dynamic context
@@ -288,11 +290,8 @@ Harness state + rules + dynamic context
 
 但核心思想已经出现：
 
-> System prompt 是 Harness 的控制面。它把工程系统的规则、状态和能力翻译成模型可执行的上下文。
+> System prompt 是 Harness 的控制面。
 
-## 小结
-
-Day 10 的关键词是：**结构化组装**。
 
 前几章我一直在加能力；这一章我开始整理“如何把这些能力告诉模型”。
 

@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-从 Day 01 到 Day 19，我每天给 Agent Harness 加一块能力：
+从 第一章 到 第十九章，我每天给 Agent Harness 加一块能力：
 
 - Agent Loop
 - Tool Use
@@ -28,19 +28,19 @@
 - Worktree Isolation
 - MCP Plugin
 
-到 Day 19，这台机器已经相当复杂。子系统很多：任务、团队、定时、隔离、自主运行、外部插件……每个都有自己的状态和查看工具。
+到 第十九章，这台机器已经相当复杂。子系统很多：任务、团队、定时、隔离、自主运行、外部插件……每个都有自己的状态和查看工具。
 
 但正因为它太复杂，出现了一个新问题：**没有统一入口能看到全局状态**。
 
 用户想知道“现在 Harness 里到底在发生什么”，得分别调用 `task_list`、`cron_list`、`team_list`、`autonomous_list`、`worktree_list`、`mcp_list`、`read_memory`、`show_errors`、`show_system_prompt`。这很不方便。
 
-所以 Day 20 作为终章，不再叠加新机制，而是做一件事：**综合集成与收尾**。
+所以 第二十章 作为终章，不再叠加新机制，而是做一件事：**综合集成与收尾**。
 
-> 补一个 `system_status` 总览工具，把前 19 天的全部子系统集成进一个仪表盘，让 Harness 有一个统一的状态出口。
+> 补一个 `system_status` 总览工具，把前 19 章的全部子系统集成进一个仪表盘，让 Harness 有一个统一的状态出口。
 
 ## 核心概念
 
-Day 20 的核心是“仪表盘”思想：
+第二十章 的核心是“仪表盘”思想：
 
 ```text
 system_status
@@ -62,7 +62,7 @@ system_status
 
 完整实现见：`code/s20_comprehensive.py`
 
-Day 20 的代码基于 Day 19 的完整实现。本章新增的只有一个工具：`system_status`。
+第二十章 的代码基于 第十九章 的完整实现。本章新增的只有一个工具：`system_status`。
 
 ### 状态聚合辅助
 
@@ -86,7 +86,7 @@ def count_status(records: dict[str, dict[str, Any]], field: str = "status") -> d
 
 ```python
 def run_system_status() -> str:
-    """工具：输出 Harness 全局状态总览，串起前 19 天的全部子系统。"""
+    """工具：输出 Harness 全局状态总览，串起前 19 章的全部子系统。"""
     ensure_mcp_plugins()
     with TASK_LOCK:
         tasks_total = len(TASKS)
@@ -147,52 +147,52 @@ def run_system_status() -> str:
 
 ## 全书能力清单
 
-Day 20 是一个合适的收尾点。让我把前 20 天造出来的能力按 Part 整理一遍。
+第二十章 是一个合适的收尾点。让我把前 20 章造出来的能力按 Part 整理一遍。
 
 ### Part 1：地基 —— 让 Agent 动起来
 
 | 章节 | 能力 |
 |---|---|
-| Day 01 Agent Loop | 模型 → 工具 → 模型的循环 |
-| Day 02 Tool Use | 让模型调用结构化工具 |
-| Day 03 Permission | 工具执行前的权限确认 |
-| Day 04 Hooks | PreToolUse / PostToolUse / UserPromptSubmit |
+| 第一章 Agent Loop | 模型 → 工具 → 模型的循环 |
+| 第二章 Tool Use | 让模型调用结构化工具 |
+| 第三章 Permission | 工具执行前的权限确认 |
+| 第四章 Hooks | PreToolUse / PostToolUse / UserPromptSubmit |
 
 ### Part 2：记忆与规划
 
 | 章节 | 能力 |
 |---|---|
-| Day 05 TodoWrite | 可见任务列表 |
-| Day 06 Subagent | 独立上下文的子 Agent |
-| Day 07 Skill Loading | 按需加载技能 |
-| Day 08 Context Compact | 长对话的上下文压缩 |
-| Day 09 Memory | 跨会话的持久化记忆 |
-| Day 10 System Prompt | 结构化组装系统提示词 |
-| Day 11 Error Recovery | 错误分类与恢复建议 |
+| 第五章 TodoWrite | 可见任务列表 |
+| 第六章 Subagent | 独立上下文的子 Agent |
+| 第七章 Skill Loading | 按需加载技能 |
+| 第八章 Context Compact | 长对话的上下文压缩 |
+| 第九章 Memory | 跨会话的持久化记忆 |
+| 第十章 System Prompt | 结构化组装系统提示词 |
+| 第十一章 Error Recovery | 错误分类与恢复建议 |
 
 ### Part 3：长期运行
 
 | 章节 | 能力 |
 |---|---|
-| Day 12 Task System | 子任务生命周期 |
-| Day 13 Background Tasks | 后台非阻塞执行 |
-| Day 14 Cron Scheduler | 时间触发任务 |
+| 第十二章 Task System | 子任务生命周期 |
+| 第十三章 Background Tasks | 后台非阻塞执行 |
+| 第十四章 Cron Scheduler | 时间触发任务 |
 
 ### Part 4：多 Agent 协作
 
 | 章节 | 能力 |
 |---|---|
-| Day 15 Agent Teams | 角色化小队 |
-| Day 16 Team Protocols | 可复用协作流程 |
-| Day 17 Autonomous Agents | 有边界的自主运行 |
-| Day 18 Worktree Isolation | 隔离工作目录 |
+| 第十五章 Agent Teams | 角色化小队 |
+| 第十六章 Team Protocols | 可复用协作流程 |
+| 第十七章 Autonomous Agents | 有边界的自主运行 |
+| 第十八章 Worktree Isolation | 隔离工作目录 |
 
 ### Part 5：扩展与集成
 
 | 章节 | 能力 |
 |---|---|
-| Day 19 MCP Plugin | 外部能力插件化 |
-| Day 20 Comprehensive | 全局状态总览 |
+| 第十九章 MCP Plugin | 外部能力插件化 |
+| 第二十章 Comprehensive | 全局状态总览 |
 
 ## 我踩的坑
 
@@ -200,7 +200,7 @@ Day 20 是一个合适的收尾点。让我把前 20 天造出来的能力按 Pa
 
 写终章时最大的诱惑是“再塞一个能力进去”。
 
-但我意识到：如果 Day 20 还在加新机制，就违背了“收尾”的定位。终章的价值是让已有的复杂系统变得可观察、可理解，而不是再增加复杂度。
+但我意识到：如果 第二十章 还在加新机制，就违背了“收尾”的定位。终章的价值是让已有的复杂系统变得可观察、可理解，而不是再增加复杂度。
 
 所以我只加了 `system_status`，把精力放在“把前面所有东西串起来”。
 
@@ -216,9 +216,11 @@ Day 20 是一个合适的收尾点。让我把前 20 天造出来的能力按 Pa
 
 但那样输出会很长，失去了“总览”的意义。所以最终版本只输出计数和状态分布，需要细节时再用 `task_read`、`team_read` 等专用工具。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里，这类总览能力通常体现在：
+第二十章 的关键词是：**收尾与可观察性**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，这类总览能力通常体现在：
 
 - 启动时的环境摘要。
 - 状态面板（todos、上下文用量、权限模式、当前目录）。
@@ -244,9 +246,6 @@ all subsystems -> aggregated snapshot -> single readable overview
 
 > 一个复杂的 Harness 需要一个统一的观察出口，否则连开发者都看不清自己在维护什么。
 
-## 小结
-
-Day 20 的关键词是：**收尾与可观察性**。
 
 20 天前，我从“让模型调用一个工具”开始；20 天后，这台机器有了任务系统、后台执行、定时调度、团队协作、自主运行、工作隔离和外部插件。
 

@@ -6,25 +6,27 @@
 
 ## 本章解决什么问题？
 
-Day 05 加上 `TodoWrite` 以后，Agent 已经能维护一份可见计划了。
+第五章 加上 `TodoWrite` 以后，Agent 已经能维护一份可见计划了。
 
 但计划可见之后，还会遇到另一个问题：**主上下文太容易被调查细节塞满**。
 
 比如用户说：
 
 ```text
-帮我理解这个仓库的 Day05 是怎么实现的，然后基于它继续做 Day06。
+帮我理解这个仓库的 Day05 是怎么实现的，然后基于它继续做 第六章。
 ```
 
-这类任务通常要先读 README、读上一章代码、读上一章文档、对比当前骨架文件。真正有价值的是最后的结论：Day06 应该做什么、怎么做、哪些文件要改。
+这类任务通常要先读 README、读上一章代码、读上一章文档、对比当前骨架文件。真正有价值的是最后的结论：第六章 应该做什么、怎么做、哪些文件要改。
 
 如果所有搜索过程、文件片段、临时推理都塞进主 Agent 的上下文，主 Agent 很快就会被噪音淹没。
 
-所以 Day 06 我实现一个最小版 Subagent：
+所以 第六章 我实现一个最小版 Subagent：
 
 > 主 Agent 可以把一个聚焦的调查任务交给子 Agent，子 Agent 独立阅读和分析，最后只把报告返回给主 Agent。
 
 它解决的不是“并发执行”问题，而是“上下文隔离”和“任务委派”问题。
+
+知乎上关于 Claude Code Subagent 的讨论里，经常把它的价值拆成四点：节省主上下文、限制工具权限、让子 Agent 专门化、必要时用更便宜的模型跑探索任务。第六章先不做模型路由和并发，只抓最核心的两个：**独立上下文 + 受限工具**。
 
 ## 核心概念
 
@@ -186,115 +188,59 @@ SUBAGENT_TOOLS = [tool for tool in TOOLS if tool["name"] in {"bash", "read_file"
 
 所以即使主 Agent 有 `write_file / edit_file / todo_write / task`，子 Agent 也看不到这些工具。
 
-这就是 Day06 的核心：
+这就是 第六章 的核心：
 
 ```text
 同一个 Harness，不同的上下文，不同的工具边界。
 ```
 
-## 我踩的坑
+运行方式：
 
-### 坑 1：让子 Agent 继续拥有 `task`
+```bash
+python code/s06_subagent.py
+```
 
-如果子 Agent 也能调用 `task`，它就可以继续创建子 Agent。
-
-这听起来像“更强的能力”，但在最小实现里很危险：
+试一个适合委派的任务：
 
 ```text
-主 Agent -> 子 Agent -> 孙 Agent -> 曾孙 Agent -> ...
+请用 task 调查第三章 Permission 是怎么实现的，只返回结论报告，不要修改文件。
 ```
 
-一旦模型开始递归委派，很容易耗尽 token、超出轮数，甚至让用户完全看不懂当前任务到底是谁在执行。
+你会看到主 Agent 调用 `task` 工具，类似：
 
-所以我在 Day06 明确禁止子 Agent 使用 `task`。
-
-### 坑 2：子 Agent 和主 Agent 共用 messages
-
-最简单的写法是直接把主 Agent 的 `messages` 传给子 Agent。
-
-但这样就失去了 Subagent 的意义。
-
-子 Agent 的中间搜索过程会全部进入主上下文：读文件、工具结果、临时推理、错误重试……主 Agent 不仅没有减负，反而更乱。
-
-所以 `run_subagent` 里必须创建新的 messages：
-
-```python
-messages: list[dict[str, Any]] = [
-    {
-        "role": "user",
-        "content": (...),
-    }
-]
+```text
+> task: {
+  'description': '调查 Permission 实现',
+  'prompt': '阅读第三章文档和 code/s03_permission.py，总结 Permission 的核心机制...'
+}
 ```
 
-最后只把子 Agent 的最终报告作为 `tool_result` 返回给主 Agent。
+子 Agent 会在自己的 messages 里读文件、分析代码，最后只把报告作为 `tool_result` 返回给主 Agent。主 Agent 不需要背负子 Agent 中间读了哪些文件、尝试了哪些命令、产生了多少临时推理。
 
-### 坑 3：给子 Agent 写权限
+这就是这一章想让用户"感受到"的东西：**把调查细节隔离出去，只把结论带回主上下文。**
 
-如果子 Agent 能写文件，就会出现一个很难解释的问题：
+## 我踩的坑
 
-用户以为主 Agent 只是“派人调查一下”，结果子 Agent 已经修改了项目。
+这一章的坑，抓住几件事就够了：
 
-这会破坏权限模型。
+- **子 Agent 不能继续拥有 `task`。** 否则就可能出现主 Agent -> 子 Agent -> 孙 Agent 的无限套娃。工具层直接不给它 `task`，比依赖模型自觉更可靠。
+- **子 Agent 不能复用主 Agent 的 messages。** 否则调查过程、工具结果、错误重试都会污染主上下文。Subagent 的意义就是独立上下文，最后只返回报告。
+- **子 Agent 的工具要受限。** 本章让它只读和执行命令，不给 `write_file/edit_file/todo_write`。用户以为只是“调查一下”，子 Agent 就不应该偷偷改项目。
+- **子 Agent 也要有预算。** 它本质上还是一个 Agent Loop，所以必须有 `max_turns`。没有轮数上限，调查任务也可能永远不返回。
 
-Day03 做 Permission 时已经有一个隐含原则：所有会改变环境的行为都应该清楚地暴露给用户。
+## 小结
 
-所以 Day06 里我让子 Agent 只做研究：可以读文件，可以运行命令，但不直接写文件。
+本章实现了一个最小版 Subagent。
 
-真正的修改仍然由主 Agent 决策和执行。
-
-### 坑 4：不限制轮数
-
-子 Agent 也是 Agent Loop，所以它也可能一直调用工具。
-
-如果没有 `max_turns`，一个调查任务可能永远不返回。
-
-所以我在 `run_subagent` 里加了：
-
-```python
-for turn in range(1, max_turns + 1):
-```
-
-超过轮数就返回错误和最后的 partial output。
-
-这个限制让 Subagent 成为一个可控工具，而不是失控的内循环。
-
-## 对应真实 Claude Code 的哪里
-
-真实 Claude Code 里也有类似的 Task/Subagent 能力。
-
-用户看起来是在和一个 Claude 交互，但 Claude 可以把某些工作委派给专门的子 Agent，例如搜索、分析、定位代码、总结结果。
-
-它的关键价值是：
-
-1. 主 Agent 不需要背负所有搜索细节。
-2. 子 Agent 可以围绕一个清晰目标独立工作。
-3. 最终只把压缩过的结论返回主 Agent。
-4. Harness 可以控制子 Agent 的工具、权限和生命周期。
-
-我这一章的实现和真实 Claude Code 的相同点是：
-
-- 都通过一个工具触发子 Agent。
-- 子 Agent 都有独立上下文。
-- 子 Agent 最终返回报告给主 Agent。
-- 子 Agent 的能力由 Harness 控制，而不是无限开放。
-
-不同点是：
-
-- 真实 Claude Code 有更多 agent type 和调度策略。
-- 真实系统可能支持更复杂的并行、取消、展示和权限冒泡。
-- 我这里没有后台任务，也没有多 Agent 团队。
-- 我这里的子 Agent 只做研究，不做写操作。
-
-这些简化是为了让 Day06 聚焦一个核心机制：
+它的核心不是“多开一个模型”，而是：
 
 ```text
 Subagent = 独立上下文 + 受限工具 + 最终报告
 ```
 
-## 小结
+从这一章开始，Agent 不再只能自己读完所有上下文，而是可以把可隔离的调查工作委派出去。主 Agent 负责目标和决策，子 Agent 负责局部探索，最后只把压缩后的结论带回主上下文。
 
-本章实现了一个最小版 Subagent。
+真实 Claude Code 的 Subagent / AgentTool 更复杂：它有不同类型的子 Agent（Explore、Plan、General-Purpose 等）、可选的同步/异步执行、独立 abort controller、上下文 fork、权限冒泡、worktree 文件系统隔离，甚至后面会扩展到多 Agent 团队。但这些能力都建立在同一个基础上：**子 Agent 有自己的上下文和工具边界，父 Agent 不应该被所有细节污染。**
 
 现在我的 Agent Harness 变成了：
 
@@ -307,8 +253,4 @@ Agent Loop
 + Subagent / Task
 ```
 
-从这一章开始，Agent 不再只能自己读完所有上下文，而是可以把一部分调查工作委派出去。
-
-Subagent 的核心思想是：
-
-> 复杂任务不要把所有细节都塞进主上下文；把可隔离的调查交给子 Agent，主 Agent 只接收结论。
+下一章要解决的问题是：当能力越来越多时，如何按需加载专门说明，而不是把所有规则都塞进 system prompt？这就是 Skill Loading。

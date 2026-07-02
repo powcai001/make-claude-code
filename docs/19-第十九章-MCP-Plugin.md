@@ -6,19 +6,19 @@
 
 ## 本章解决什么问题？
 
-前 18 天里，Agent 的工具能力都是写死在 Harness 里的。比如 `bash`、`read_file`、`task`、`team_run`、`worktree_create`，都是 Python 文件里的函数。
+前 18 章里，Agent 的工具能力都是写死在 Harness 里的。比如 `bash`、`read_file`、`task`、`team_run`、`worktree_create`，都是 Python 文件里的函数。
 
 这对学习很方便，但真实 Agent 不可能把所有能力都内置进核心代码。不同项目会需要不同外部系统：数据库、浏览器、GitHub、Jira、监控、内部知识库、设计稿平台、云服务 API……如果每接一个系统都改 Harness 核心，系统会很快失控。
 
 所以真实 Claude Code / Codex 类工具会把一部分能力抽象成外部插件或 MCP server：Harness 负责发现、展示和调用，具体能力由插件提供。
 
-Day 19 我实现一个最小版 MCP Plugin：
+第十九章 我实现一个最小版 MCP Plugin：
 
 > 用一个内存态 plugin registry 表示外部能力提供方，把插件工具统一暴露成 `mcp_list`、`mcp_read`、`mcp_call` 这组工具。
 
 ## 核心概念
 
-Day 19 的流程是：
+第十九章 的流程是：
 
 ```text
 mcp_register / builtin_mcp_plugins
@@ -46,7 +46,7 @@ Tool 是插件暴露出来的具体能力。它有工具名、描述和 input_sc
 
 完整实现见：`code/s19_mcp_plugin.py`
 
-Day 19 继续基于 Day 18，所以 Worktree Isolation、Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 MCP plugin registry 和 MCP 工具。
+第十九章 继续基于 第十八章，所以 Worktree Isolation、Autonomous Agents、Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在 MCP plugin registry 和 MCP 工具。
 
 ### McpTool 和 McpPlugin
 
@@ -185,7 +185,7 @@ def run_mcp_call(plugin: str, tool: str, arguments: dict[str, Any] | None = None
 MCP plugin xxx.yyy is registered but has no local handler in this minimal demo.
 ```
 
-这正好说明了 Day 19 的边界：我实现的是 Harness 侧 registry，不是真实外部 MCP transport。
+这正好说明了 第十九章 的边界：我实现的是 Harness 侧 registry，不是真实外部 MCP transport。
 
 ## 我踩的坑
 
@@ -193,7 +193,7 @@ MCP plugin xxx.yyy is registered but has no local handler in this minimal demo.
 
 MCP 的完整协议涉及 transport、JSON-RPC、server lifecycle、tool schema、resource、prompt、鉴权等内容。
 
-如果 Day 19 直接实现完整 MCP，会偏离这个项目的节奏。
+如果 第十九章 直接实现完整 MCP，会偏离这个项目的节奏。
 
 所以我先做 registry 和统一调用入口，让代码具备“插件化工具”的形状。未来要接真实 MCP server，可以把 `run_mcp_call()` 的内部实现换成进程通信或网络通信。
 
@@ -211,9 +211,11 @@ MCP 的完整协议涉及 transport、JSON-RPC、server lifecycle、tool schema�
 
 所以 `McpPlugin` 有 `enabled` 字段，`mcp_call` 会先检查启用状态。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里，MCP 或插件系统通常对应这些能力：
+第十九章 的关键词是：**外部能力插件化**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，MCP 或插件系统通常对应这些能力：
 
 - 发现外部 server 暴露的工具。
 - 把外部工具 schema 注入模型可用工具列表。
@@ -239,9 +241,6 @@ plugin registry -> tool discovery -> mcp_call -> normalized result
 
 > Harness 不应该只会调用自己内置的工具，还应该能发现、管理和调用外部能力提供方。
 
-## 小结
-
-Day 19 的关键词是：**外部能力插件化**。
 
 内置工具让 Agent 能完成基本工作；MCP Plugin 让 Agent 能接入外部系统。
 

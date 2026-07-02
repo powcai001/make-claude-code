@@ -14,13 +14,13 @@
 
 但这里也有危险：自主不等于无限自动化。没有边界的 Autonomous Agent 很容易变成无限循环、重复调用工具、超预算、甚至做出用户没授权的动作。
 
-所以 Day 17 我实现的是一个**保守版 Autonomous Agents**：
+所以 第十七章 我实现的是一个**保守版 Autonomous Agents**：
 
 > 自主运行必须有 `max_steps`、可观察的 `success_criteria`、可选时间预算，并且每一步都记录在 `AutonomyRun` 中，可暂停、可恢复、可查看。
 
 ## 核心概念
 
-Day 17 的流程是：
+第十七章 的流程是：
 
 ```text
 autonomous_start(goal, success_criteria, max_steps)
@@ -52,7 +52,7 @@ autonomous_start(goal, success_criteria, max_steps)
 
 完整实现见：`code/s17_autonomous_agents.py`
 
-Day 17 继续基于 Day 16，所以 Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在自主运行记录和自主 step。
+第十七章 继续基于 第十六章，所以 Team Protocols、Agent Teams、Cron Scheduler、Background Tasks、Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在自主运行记录和自主 step。
 
 ### AutonomyRun
 
@@ -170,7 +170,7 @@ def run_autonomous_step(run: AutonomyRun) -> str:
     report = run_team(objective, protocol="plan")
 ```
 
-我让每个自主 step 复用 Day 16 的 `plan` 协议。这样 Autonomous Agent 不会随意乱跑，而是每步都经过：
+我让每个自主 step 复用 第十六章 的 `plan` 协议。这样 Autonomous Agent 不会随意乱跑，而是每步都经过：
 
 ```text
 research -> plan -> review
@@ -190,7 +190,7 @@ if latest_team_id:
 
 ### autonomous 工具
 
-Day 17 新增一组工具：
+第十七章 新增一组工具：
 
 - `autonomous_start`：启动一次自主运行。
 - `autonomous_step`：推进一个 step。
@@ -237,9 +237,11 @@ while not done:
 
 所以 `autonomous_start` 强制要求 `success_criteria`。这不是形式主义，而是给停止条件一个可观察的目标。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类系统里，Autonomous Agents 往往不是单个函数，而是多种机制组合：
+第十七章 的关键词是：**有边界的自主性**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类系统里，Autonomous Agents 往往不是单个函数，而是多种机制组合：
 
 - todo / plan 作为短期目标管理。
 - task / subagent 作为分工执行单元。
@@ -266,9 +268,6 @@ bounded autonomous run -> repeated planned steps -> team/task records -> inspect
 
 > Autonomous Agent 的关键不是“自动运行”，而是“带边界、可观察、可暂停、可恢复地自动推进”。
 
-## 小结
-
-Day 17 的关键词是：**有边界的自主性**。
 
 没有预算和停止条件的自主 Agent 是危险的；没有记录的自主 Agent 是不可调试的。
 

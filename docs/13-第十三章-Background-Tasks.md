@@ -6,9 +6,9 @@
 
 ## 本章解决什么问题？
 
-Day 12 把 `task` 从一次性子 Agent 调用升级成了 Task System：每个子任务都有 `task_id`、状态、轮次、结果和错误记录。
+第十二章 把 `task` 从一次性子 Agent 调用升级成了 Task System：每个子任务都有 `task_id`、状态、轮次、结果和错误记录。
 
-但 Day 12 仍然有一个明显限制：任务是同步执行的。主 Agent 一调用 `task`，就会阻塞在那里，直到子 Agent 完成调查并返回报告。
+但 第十二章 仍然有一个明显限制：任务是同步执行的。主 Agent 一调用 `task`，就会阻塞在那里，直到子 Agent 完成调查并返回报告。
 
 这对短任务没问题，但真实使用 Agent 时，经常会遇到更长的调查：
 
@@ -19,13 +19,13 @@ Day 12 把 `task` 从一次性子 Agent 调用升级成了 Task System：每个�
 
 如果主 Agent 必须一直等，交互体验会很差。用户也不能在等待期间继续问问题、调整计划或查看其它状态。
 
-所以 Day 13 我在 Day 12 的 Task System 上继续加一层：Background Tasks。
+所以 第十三章 我在 第十二章 的 Task System 上继续加一层：Background Tasks。
 
 > Background Tasks 让子 Agent 可以在后台线程中运行，主 Agent 立即拿到 `task_id`，之后通过 `task_list`、`task_read`、`task_wait` 查询状态和结果。
 
 ## 核心概念
 
-Day 13 的流程是：
+第十三章 的流程是：
 
 ```text
 task(run_in_background=True)
@@ -53,11 +53,11 @@ task(run_in_background=True)
 
 完整实现见：`code/s13_background_tasks.py`
 
-Day 13 继续基于 Day 12，所以 Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在后台线程和状态查询。
+第十三章 继续基于 第十二章，所以 Task System、Error Recovery、System Prompt、Memory、Skill、Compact 等机制都保留。新增内容集中在后台线程和状态查询。
 
 ### TaskRecord 增加 background 字段
 
-Day 12 的 `TaskRecord` 已经记录了任务生命周期。Day 13 我只加了一个字段：
+第十二章 的 `TaskRecord` 已经记录了任务生命周期。第十三章 我只加了一个字段：
 
 ```python
 class TaskRecord(TypedDict):
@@ -176,11 +176,11 @@ if run_in_background:
     )
 ```
 
-如果不是后台任务，就沿用 Day 12 的同步执行逻辑。
+如果不是后台任务，就沿用 第十二章 的同步执行逻辑。
 
 ### task_wait
 
-Day 12 已经有 `task_list` 和 `task_read`。Day 13 新增 `task_wait`：
+第十二章 已经有 `task_list` 和 `task_read`。第十三章 新增 `task_wait`：
 
 ```python
 def run_task_wait(task_id: str, timeout_seconds: float = 30.0) -> str:
@@ -239,7 +239,7 @@ def run_task_wait(task_id: str, timeout_seconds: float = 30.0) -> str:
 
 所以后台模式必须改变返回语义：返回的不是最终结果，而是 `task_id` 和后续查询方式。
 
-这也是为什么 Day 12 先做 `TaskRecord` 很重要。如果没有任务记录，后台任务启动后就没有地方保存结果。
+这也是为什么 第十二章 先做 `TaskRecord` 很重要。如果没有任务记录，后台任务启动后就没有地方保存结果。
 
 ### 坑 2：共享状态必须加锁
 
@@ -247,7 +247,7 @@ def run_task_wait(task_id: str, timeout_seconds: float = 30.0) -> str:
 
 虽然 CPython 的某些字典操作是原子的，但任务记录是多字段更新：`status`、`finished_at`、`result`、`error`。如果不加锁，读取方可能看到半更新状态。
 
-所以 Day 13 我加了 `TASK_LOCK`，在创建、读取、更新任务时都使用它。
+所以 第十三章 我加了 `TASK_LOCK`，在创建、读取、更新任务时都使用它。
 
 ### 坑 3：后台任务不能无限等待
 
@@ -255,9 +255,11 @@ def run_task_wait(task_id: str, timeout_seconds: float = 30.0) -> str:
 
 所以 `task_wait` 有默认 30 秒等待，并把最大等待限制在 300 秒。超时后返回“仍在运行”的状态，让模型决定下一步。
 
-## 对应真实 Claude Code 的哪里
+## 小结
 
-真实 Claude Code / Codex 类工具里，Background Tasks 通常体现在几类能力里：
+第十三章 的关键词是：**非阻塞执行**。
+
+**对照真实 Claude Code**：真实 Claude Code / Codex 类工具里，Background Tasks 通常体现在几类能力里：
 
 - Bash 工具的后台运行模式。
 - 长任务启动后返回 task id。
@@ -284,10 +286,7 @@ run_in_background -> thread -> TaskRecord -> task_list/task_read/task_wait
 
 > 后台任务的本质，是把“启动执行”和“读取结果”拆开，让 Harness 管理中间状态。
 
-## 小结
 
-Day 13 的关键词是：**非阻塞执行**。
-
-Day 12 让子任务可跟踪；Day 13 让子任务可以不阻塞主 Agent。
+第十二章 让子任务可跟踪；第十三章 让子任务可以不阻塞主 Agent。
 
 有了 `run_in_background` 和 `task_wait`，Task System 开始具备真实 Harness 的味道：主 Agent 可以启动长任务、继续交互、按需查询状态，再在合适的时候读取结果。

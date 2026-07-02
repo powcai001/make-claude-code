@@ -4,7 +4,7 @@
 > 📄 **本章代码**：[`code/s03_permission.py`](https://github.com/powcai001/make-claude-code/blob/main/code/s03_permission.py)
 
 
-Day 02 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`edit_file`。
+第二章 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`edit_file`。
 
 这时 Agent 已经不只是“会说话”了，它开始能动手改文件、执行命令。
 
@@ -18,7 +18,7 @@ Day 02 我给 Agent 加了多个工具：`bash`、`read_file`、`write_file`、`
 
 ## 本章解决什么问题？
 
-Day 02 的工具分发层解决的是：
+第二章 的工具分发层解决的是：
 
 ```text
 模型想调用哪个工具？
@@ -116,7 +116,7 @@ Permission denied: ...
 
 ## Permission 和 safe_path 的区别
 
-Day 02 我已经写了 `safe_path()`：
+第二章 我已经写了 `safe_path()`：
 
 ```python
 def safe_path(path: str) -> Path:
@@ -157,7 +157,7 @@ Permission：执行边界
 
 这一章没有重写 Agent Loop，也没有重写 Tool Use。
 
-我只是把 Day 02 里的“危险命令 demo guard”从 `run_bash()` 里拿出来，变成一个独立的权限管线。
+我只是把 第二章 里的“危险命令 demo guard”从 `run_bash()` 里拿出来，变成一个独立的权限管线。
 
 核心类型很简单：
 
@@ -219,7 +219,7 @@ def permission_decision(
             if fragment in command:
                 return "ask", f"bash command may change files or environment: {fragment!r}"
 
-    return "allow", "safe by current Day 03 policy"
+    return "allow", "safe by current chapter 3 policy"
 ```
 
 也就是说：
@@ -279,168 +279,59 @@ else:
 
 ---
 
+运行方式：
+
+```bash
+python code/s03_permission.py
+```
+
+试一个会触发权限拦截的任务：
+
+```text
+帮我把当前目录下所有文件都删掉
+```
+
+你会看到类似这样的交互：
+
+```text
+> bash: {'command': 'rm -rf *'}
+⚠ Permission required: bash
+命令可能删除文件: 'rm '
+Allow? [y/N]
+```
+
+- 如果输入 `N`（或直接回车），Harness 返回 `Permission denied`，模型会看到被拒绝、调整策略。
+- 如果是 `rm -rf /` 这种命中黑名单的命令，连询问都没有，直接 `⛔ Permission denied`。
+- `read_file` 这类只读操作默认直接放行，不会打断你。
+
+这就是这一章想让用户"感受到"的东西：**模型可以提出动作，但能不能落地，是 Harness 说了算。**
+
 ## 我踩的坑
 
-### 坑 1：把危险命令判断塞进 `run_bash()`
+这一章的坑，抓住几件事就够了：
 
-Day 02 里，我在 `run_bash()` 里写过一个 demo guard：
-
-```python
-if any(fragment in lowered for fragment in dangerous_fragments):
-    return "Error: dangerous command blocked by the Day 02 demo guard."
-```
-
-这能挡住一点东西，但问题是：权限逻辑被塞进了具体工具 handler。
-
-如果以后 `write_file`、`edit_file`、`delete_file`、`git_commit` 都有自己的权限逻辑，代码会散在每个 handler 里面。
-
-Day 03 的修复方式是：
-
-```text
-权限逻辑从 handler 里拿出来，统一放到 handler 执行前。
-```
-
-handler 只负责做事。
-
-Permission 负责决定能不能做。
-
----
-
-### 坑 2：以为 `safe_path()` 就是权限系统
-
-`safe_path()` 很重要，但它只能回答：
-
-```text
-这个路径有没有逃出 workspace？
-```
-
-它不能回答：
-
-```text
-这个文件该不该被覆盖？
-这个命令该不该被执行？
-这个操作要不要问用户？
-```
-
-所以它只是路径沙箱的一部分，不是完整权限边界。
-
----
-
-### 坑 3：拒绝工具后没有返回 `tool_result`
-
-一开始很容易写成：
-
-```python
-if not check_permission(block):
-    continue
-```
-
-这样工具确实没有执行，但模型也不知道发生了什么。
-
-正确做法是：
-
-```python
-output = f"Permission denied: {reason}"
-tool_results.append({
-    "type": "tool_result",
-    "tool_use_id": block.id,
-    "content": output,
-})
-```
-
-只要模型发起了 `tool_use`，Harness 就应该给它一个对应的 `tool_result`。
-
----
-
-### 坑 4：把所有写操作都直接拒绝
-
-如果 `write_file` 和 `edit_file` 全部 `deny`，Agent 就无法完成大部分编码任务。
-
-所以更合理的教学版策略是：
-
-```text
-读文件：allow
-写文件：ask
-明显危险：deny
-```
-
-这不是最安全的生产策略，但它很好地展示了 Permission 的基本形状。
-
----
-
-## 对应真实 Claude Code 的哪里
-
-真实 Claude Code 的权限系统比这里复杂很多。
-
-我现在这个教学版只有三种结果：
-
-```text
-allow / ask / deny
-```
-
-真实系统里，权限判断会涉及更多层次：
-
-- 工具参数验证。
-- 工具自己的权限检查。
-- 用户设置里的 allow / deny 规则。
-- 项目设置里的规则。
-- 命令行参数传入的授权规则。
-- Hooks 对工具调用的拦截。
-- 某些模式下的自动审批。
-- 子 Agent 的权限冒泡。
-
-也就是说，真实系统不是一个简单的 `if`。
-
-它更像一条管线：
-
-```text
-validate input
--> pre tool hooks
--> tool permission check
--> user / project / policy rules
--> ask user if needed
--> execute tool
--> return result
-```
-
-但教学版先保留最小骨架：
-
-```text
-tool_use -> permission check -> handler -> tool_result
-```
-
-先理解这条线，后面再加 Hooks、配置、多 Agent，都不会乱。
-
----
+- **权限逻辑不要塞进 handler。** 第二章里我把危险命令判断写在 `run_bash()` 里，结果是每个工具各管各的权限，规则散得到处都是。正确做法是把权限判断提到 handler 执行前，统一一道门。
+- **拒绝工具后必须回填 `tool_result`。** 不能 `continue` 跳过——模型发起的每个 `tool_use` 都要有一个对应的 `tool_result`，否则消息链断裂，模型不知道发生了什么。拒绝也是一种结果。
+- **不要把所有写操作都直接 deny。** 写文件全 deny，Agent 就没法完成任何编码任务。教学版的合理策略是：读 allow、写 ask、明显危险 deny，刚好展示三种决策。
+- **子串匹配挡不住组合命令。** `DENIED_BASH_FRAGMENTS` 是简单子串匹配，`rm -rf /` 能挡住，但 `echo hi && rm -rf foo` 这种用 `&&` 拼起来的命令，子串匹配不一定命中。真实 Claude Code 会把组合命令按 `&&` `;` `|` 拆成子命令逐条匹配——这是后面优化权限规则时要补的点，第三章先知道有这个坑就行。
+- **deny 是单调的。** 一旦某个环节决定 deny，后续环节不能翻转成 allow。这是权限系统最重要的安全不变式：在纵深防御里，内层不该有能力削弱外层的保护。理解了这一点，后面加 Hooks 时就不会犯"用 hook 去解锁被全局规则禁止的操作"这种错。
 
 ## 小结
 
-Day 01 我得到的是：
-
-```text
-一个工具 + 一个循环 = 一个 Agent
-```
-
-Day 02 我得到的是：
-
-```text
-加工具不是改循环，而是加 schema、加 handler、注册 dispatch map。
-```
-
-Day 03 我得到的是：
+第一章我得到的是：`一个工具 + 一个循环 = 一个 Agent`。  
+第二章我得到的是：`加工具不是改循环，而是加 schema、加 handler、注册 dispatch map`。  
+第三章我得到的是：
 
 ```text
 模型可以提出动作，但 Harness 决定动作能不能执行。
 ```
 
-Permission 不是工具的一部分。
+Permission 不是工具的一部分，而是工具执行前的一道边界。
 
-Permission 是工具执行前的一道边界。
+```text
+tool_use -> permission check -> handler -> tool_result
+```
 
-这一章之后，Agent 不再是“模型说执行就执行”，而是开始有了最基础的执行控制。
+真实 Claude Code 的权限系统比这复杂得多。它有五种权限模式（default / plan / acceptEdits / auto / bypassPermissions），从最保守到最激进渐变；权限判断被抽象成一个可插拔的函数接口 `f(tool, input, context) -> allow/deny/ask`，在 REPL、SDK、远程环境里有不同实现；还会用 tree-sitter 把 bash 命令解析成 AST 逐条评估安全性。但这些都是叠在"工具执行前先过一道权限门"这个核心结构之上的，没有改变 Permission 的本质。
 
-下一章 Day 04，我会继续把这个思路往前推进：
-
-如果权限检查是工具执行前的固定边界，那么更通用的“执行前 / 执行后扩展点”是什么？
-
-答案就是 Hooks。
+下一章要回答的问题是：如果权限检查是工具执行前的固定边界，那更通用的"执行前/执行后扩展点"是什么？答案就是 Hooks。

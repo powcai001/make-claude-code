@@ -6,7 +6,7 @@
 
 ## 本章解决什么问题？
 
-Day 06 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出去，避免主上下文被搜索细节塞满。
+第六章 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出去，避免主上下文被搜索细节塞满。
 
 但还有一个更常见的上下文问题：**系统提示词会越长越大**。
 
@@ -18,11 +18,13 @@ Day 06 实现 Subagent 后，Agent 已经可以把一部分调查工作委派出
 2. 不同领域的指令可能互相干扰。
 3. 新增能力必须改核心 system prompt，扩展性很差。
 
-所以 Day 07 我实现一个最小版 Skill Loading。
+所以 第七章 我实现一个最小版 Skill Loading。
 
 它的核心思想是：
 
 > 技能不是一直塞在 system prompt 里的长文本，而是按任务动态加载的指令包。
+
+知乎上讨论 Claude Code Skill 时常用一个词：**progressive disclosure（渐进式披露）**。意思是不要一开始就把所有知识全量塞进上下文，而是先给模型一份"菜单"（技能名 + 描述），等真正需要时再读取完整内容。这和"超长 system prompt 一把梭"相比，前期稍重，但更利于长期维护和上下文预算控制。
 
 ## 核心概念
 
@@ -137,7 +139,7 @@ description: Help write clear project documentation
 
 ### 选择 Skill
 
-Day07 不引入 embeddings，也不做复杂召回，只用简单关键词打分：
+第七章 不引入 embeddings，也不做复杂召回，只用简单关键词打分：
 
 ```python
 def select_skills(query: str, skills: dict[str, Skill], limit: int = 3) -> list[Skill]:
@@ -149,7 +151,7 @@ def select_skills(query: str, skills: dict[str, Skill], limit: int = 3) -> list[
 
 这个实现很朴素，但它有一个好处：行为确定、容易理解、容易调试。
 
-Day07 的重点不是检索算法，而是 Harness 里多了一个新的阶段：
+第七章 的重点不是检索算法，而是 Harness 里多了一个新的阶段：
 
 ```text
 构造上下文之前，先决定本轮需要哪些技能。
@@ -199,7 +201,7 @@ write_file / edit_file / todo_write / task
 
 ### Agent Loop 的变化
 
-Day07 最关键的变化发生在用户输入之后：
+第七章 最关键的变化发生在用户输入之后：
 
 ```python
 trigger_hooks("UserPromptSubmit", query)
@@ -220,97 +222,60 @@ agent_loop(history, build_system_prompt(active_skills))
 用户输入进入模型之前，Harness 先做上下文装配。
 ```
 
+运行方式：
+
+```bash
+python code/s07_skill_loading.py
+```
+
+第七章的 `skills/` 目录下有两个示例技能：`python` 和 `docs`。试一个和 Python 相关的任务：
+
+```text
+帮我写一个 Python 函数，计算斐波那契数列第 n 项
+```
+
+你会看到 Harness 在用户输入进入模型前，先选出相关技能：
+
+```text
+[skills] active: python
+```
+
+这表示本轮 system prompt 里被注入了 Python 技能的摘要（名字 + 描述 + 路径），但完整内容没有塞进去。如果模型需要完整指令，它会调用 `read_skill("python")` 按需读取。
+
+如果换一个文档类任务：
+
+```text
+帮我写一段项目介绍
+```
+
+你会看到：
+
+```text
+[skills] active: docs
+```
+
+这就是这一章想让用户"感受到"的东西：**Harness 每一轮根据任务动态装配上下文，而不是把所有规则一次性全量塞进 system prompt。**
+
 ## 我踩的坑
 
-### 坑 1：把所有 Skill 全塞进 system prompt
+这一章的坑，抓住几件事就够了：
 
-最简单的实现是：扫描到几个 `SKILL.md`，就把它们完整拼到 system prompt 后面。
-
-但这很快会把上下文撑爆。
-
-更糟的是，当前任务可能只需要一个 Python skill，却被迫带上文档、前端、部署、数据库等所有说明。
-
-所以我改成只注入 compact summary，完整内容按需读取。
-
-### 坑 2：把 Skill 当成插件执行
-
-Skill Loading 很容易被误解成“加载插件”。
-
-但这一章里，Skill 只是指令，不是代码。
-
-Harness 只读取 Markdown，不执行里面的任何命令，也不会 import 任何 Python 文件。
-
-这是一个重要的安全边界：
-
-```text
-Skill = instructions, not executable code.
-```
-
-### 坑 3：扫描全局技能目录
-
-我的机器上有全局 ZCode skills。如果示例代码默认扫描这些目录，看起来会更“强”。
-
-但这会让项目不可复现。
-
-别人 clone 这个仓库以后，运行结果取决于他本机装了哪些全局技能，这不是一个好的教学实现。
-
-所以 Day07 默认只扫描：
-
-```text
-workspace/skills/**/SKILL.md
-```
-
-### 坑 4：没有 skills 目录时报错
-
-最小实现必须能在空仓库里运行。
-
-如果没有 `skills/` 目录，`discover_skills` 不能报错，而应该返回空字典：
-
-```python
-if not root.exists() or not root.is_dir():
-    return {}
-```
-
-这样 Skill Loading 是一个可选增强，而不是启动前置条件。
-
-## 对应真实 Claude Code 的哪里
-
-真实 Claude Code / Codex 这类 Agent Harness 里，都会有类似“按需加载能力说明”的机制。
-
-用户看到的是一个 Agent，但 Harness 背后会根据任务类型加载不同的说明、工具描述、技能文档或项目规则。
-
-这类机制的价值是：
-
-1. 不让 system prompt 无限膨胀。
-2. 不同任务只加载相关指令。
-3. 技能可以独立维护和安装。
-4. Harness 可以控制哪些技能可信、哪些技能可见、哪些技能需要按需读取。
-
-我这一章的实现和真实系统的相同点是：
-
-- 都把技能当成外部指令包。
-- 都在模型调用前参与 context construction。
-- 都倾向于先注入摘要，再按需读取完整内容。
-- 都需要处理技能发现、选择和读取。
-
-不同点是：
-
-- 真实系统有更完整的 metadata、版本、安装和冲突处理。
-- 真实系统可能支持用户级、项目级、插件级多层技能来源。
-- 真实系统有更强的信任边界和权限模型。
-- 我这里只做工作区本地 Markdown 文件，不执行插件代码。
-
-这些简化是故意的。
-
-Day07 的目标不是做一个完整插件市场，而是让 Harness 多一个关键能力：
-
-```text
-根据任务动态装配上下文。
-```
+- **不要把所有 Skill 全塞进 system prompt。** 扫描到几个 SKILL.md 就全量拼接，很快会把上下文撑爆，而且当前任务可能只需要一个技能。正确做法是只注入摘要，完整内容按需读取。
+- **Skill 是指令，不是可执行插件。** Harness 只读取 Markdown，不执行里面的命令，也不 import Python 文件。`Skill = instructions, not executable code` 是一个重要的安全边界。
+- **不要扫描全局技能目录。** 如果默认扫描机器上的全局 skills，项目就不可复现——别人 clone 后运行结果取决于他本机装了什么。第七章只扫描工作区内的 `skills/`。
+- **没有 skills 目录时不能报错。** `discover_skills` 在目录不存在时返回空字典，让 Skill Loading 是可选增强，而不是启动前置条件。
 
 ## 小结
 
 本章实现了一个最小版 Skill Loading。
+
+它的核心不是检索算法，而是 Harness 里多了一个阶段：**构造上下文之前，先决定本轮需要哪些技能。**
+
+```text
+用户输入 -> 发现技能 -> 选择相关技能 -> 注入摘要 -> 按需读取完整内容
+```
+
+真实 Claude Code / Codex 都有类似的按需加载机制。真实系统会更完整：有多层 metadata、版本管理、用户级/项目级/插件级多层技能来源、更严格的信任边界和权限模型。但核心都是 progressive disclosure：**先给菜单，再按需上菜，而不是一开始把厨房搬上桌。**
 
 现在我的 Agent Harness 变成了：
 
@@ -324,6 +289,4 @@ Agent Loop
 + Skill Loading
 ```
 
-Skill Loading 的核心思想是：
-
-> 不要把所有能力都永久塞进 system prompt；让 Harness 在每一轮根据任务选择需要的指令包。
+下一章要解决的问题是：对话越来越长之后，messages 会撞上上下文窗口上限。怎么在不丢失关键信息的前提下压缩历史？这就是 Context Compact。
