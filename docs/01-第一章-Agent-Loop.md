@@ -63,6 +63,104 @@ Done
 
 从 Harness Engineering 的角度看，Agent Loop 是最底层的运行时结构。后面的权限、Hooks、Todo、上下文压缩、多 Agent 协作，本质上都不是替代这个循环，而是围绕这个循环继续加控制层。
 
+## messages 是怎么长出来的
+
+理解 Agent Loop 最大的卡点，不是循环本身，而是 `messages` 这个数据结构到底长什么样、每一轮它是怎么变长的。这一节把它彻底讲清楚，因为后面所有章节（权限、压缩、子 Agent）都在往这份 `messages` 里塞东西。
+
+### 一条消息 = 一个角色 + 一组内容块
+
+`messages` 是一个数组，里面每条消息只有两个字段：`role`（谁说的）和 `content`（说了什么）。但 `content` 不一定是一段字符串——它常常是一个**内容块数组**，数组里可以混放不同类型的块：
+
+```text
+text 块   —— 普通文字
+tool_use 块 —— 模型发起的工具调用请求（在 assistant 消息里）
+tool_result 块 —— 工具执行后的结果（在 user 消息里）
+```
+
+这就是为什么 assistant 的回复经常长这样（一段文字 + 一个工具请求，放在同一条消息里）：
+
+```python
+{
+    "role": "assistant",
+    "content": [
+        {"type": "text", "text": "好的，我先创建文件。"},
+        {"type": "tool_use", "id": "call_00_abc", "name": "bash",
+         "input": {"command": "echo 'print(\"hello agent\")' > hello.py"}}
+    ]
+}
+```
+
+### 一次完整任务，messages 长这样
+
+下面是一个真实的例子：用户要求"创建 hello.py 并运行它"。整个过程中 `messages` 一共长了 6 条消息，我按发生顺序标号：
+
+```python
+messages = [
+    # ① 用户最初的任务
+    {"role": "user", "content": "在当前目录创建 hello.py，内容是打印 hello agent，然后运行它"},
+
+    # ② 模型第一轮回复：说话 + 请求工具（content 是数组，可同时含文本块和工具块）
+    {"role": "assistant", "content": [
+        {"type": "text", "text": "好的，我先创建文件。"},
+        {"type": "tool_use", "id": "call_00_abc", "name": "bash",
+         "input": {"command": "echo 'print(\"hello agent\")' > hello.py"}}
+    ]},
+
+    # ③ 工具结果：role 是 "user"（不是 "tool"！），用 tool_result 块回传
+    {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_00_abc",
+         "content": "(no output, exit code 0)"}
+    ]},
+
+    # ④ 模型第二轮回复：看到结果后继续请求下一个工具
+    {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "call_01_def", "name": "bash",
+         "input": {"command": "python hello.py"}}
+    ]},
+
+    # ⑤ 第二个工具结果
+    {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "call_01_def",
+         "content": "hello agent"}
+    ]},
+
+    # ⑥ 模型最后一轮：不再请求工具，循环结束
+    {"role": "assistant", "content": [
+        {"type": "text", "text": "已完成：创建了 hello.py 并运行，输出 hello agent。"}
+    ]},
+]
+```
+
+### 三条铁律
+
+整个 Agent Loop 里关于 messages 最容易踩错的，就是下面三条。记住它们，后面所有的坑都能自己推导出来。
+
+**铁律一：assistant 只追加，不原地改。**
+模型每轮返回的 `response.content` 必须整体 append 成一条新的 `assistant` 消息。哪怕它这一轮只说了句话、没调工具，也要追加。模型下一轮要读懂自己上一轮说了什么，靠的就是这条消息还在 `messages` 里。
+
+**铁律二：tool_result 的 role 是 `user`，不是 `tool`。**
+这是 Anthropic API 和 OpenAI API 最显眼的区别。OpenAI 用 `role: "tool"` 单独装结果；Anthropic 把工具结果塞进 `role: "user"` 的消息里，用 `type: "tool_result"` 区分。原因是：**从模型视角，工具结果是"环境（user 侧）提供的新信息"**，所以归到 user 角色。
+
+**铁律三：tool_use_id 必须严格配对。**
+②里的 `id` 和 ③里的 `tool_use_id` 必须一字不差。模型一轮里可能请求多个工具（content 数组里有多个 `tool_use` 块），那下一条 `user` 消息里就要返回**多个** `tool_result`，每个对上各自的 id。配错任意一个，API 直接报错。
+
+### 一图看清 messages 如何随循环增长
+
+把上面的 6 条消息画成时间线，就能看出 Agent Loop 到底在干什么——它其实就是在不停地往 `messages` 这个数组里**交替追加** assistant 消息和 user 消息：
+
+```text
+循环轮次        messages 新增的条目            说话方
+─────────────────────────────────────────────────
+（初始）   ①  user 任务                       user
+ 第1轮    ②  assistant 回复(含 tool_use)      assistant
+          ③  user 工具结果(tool_result)        user(环境)
+ 第2轮    ④  assistant 回复(含 tool_use)      assistant
+          ⑤  user 工具结果(tool_result)        user(环境)
+ 第3轮    ⑥  assistant 最终文字(无 tool_use) → 循环结束
+```
+
+每一轮循环做的事，就是往这个数组末尾加 2 条（一条 assistant + 一条 user 工具结果），然后把**整个数组**重新发给模型。模型是无状态的——它每次都从头读完整个 `messages`，假装自己记得前面发生过什么。所以 `messages` 不只是对话记录，它是**模型唯一的记忆载体**。
+
 ## 我的实现
 
 完整实现见：`code/s01_agent_loop.py`
@@ -177,37 +275,45 @@ python code/s01_agent_loop.py
 
 ## 我踩的坑
 
-### 1. 忘记把 assistant response 放回 messages
+回头看，这一章真正卡住我的，全都集中在 `messages` 这个数据结构上。下面五个坑，前三个其实都是同一种错的变种——没真正理解 messages 是怎么长的。
 
-一开始很容易写成：模型请求工具，我执行工具，然后只把工具结果发回去。
+### 1. 漏掉 assistant 那一步，messages 对不上（违反铁律一）
 
-问题是，模型下一轮需要知道自己刚才发起的是哪个 `tool_use`。如果不把 assistant response 追加进 `messages`，后面的 `tool_result` 就失去了对应关系。
-
-正确顺序是：
-
-```text
-assistant tool_use -> user tool_result
-```
-
-而不是只有：
-
-```text
-user tool_result
-```
-
-### 2. 把 tool_result 的 role 写错
-
-在 Anthropic Messages API 里，工具结果是以 `role: "user"` 的消息放回去的，内容块类型是 `tool_result`。
-
-也就是说，不是：
+最容易写错的第一版循环长这样：
 
 ```python
+# ❌ 错误：只把工具结果塞回去，没把 assistant 回复塞回去
+response = client.messages.create(...)
+tool_results = [...执行工具...]
+messages.append({"role": "user", "content": tool_results})   # 直接跳过 assistant
+messages_again = client.messages.create(..., messages=messages)
+```
+
+运行直接报错。报错信息会提示 `tool_result` 找不到对应的 `tool_use`。
+
+为什么？因为 Anthropic API 要求每一条 `tool_result` 必须能向前找到一条同会话里的 `tool_use`。我跳过了 assistant 那条消息，等于让模型"凭空收到一个工具结果，但不知道是谁请求的"。这就是违反了**铁律一（assistant 只追加不原地改）**。
+
+正确顺序必须严格交替：
+
+```text
+assistant(tool_use)  →  user(tool_result)
+```
+
+而且两者都要 append 进 messages，缺一不可。原文「messages 是怎么长出来的」那张时间线里，每一轮都是成对出现的两条——②③是一对，④⑤是一对，就是这个原因。
+
+### 2. 把 tool_result 的 role 写成了 "tool"（违反铁律二）
+
+我一开始是照着 OpenAI 的习惯写的：
+
+```python
+# ❌ OpenAI 风格，Anthropic 不认
 {"role": "tool", "content": output}
 ```
 
-而是：
+Anthropic 的 API 会直接拒绝这个结构。正确写法是把结果装进一条 `role: "user"` 的消息，内容块类型声明为 `tool_result`：
 
 ```python
+# ✅ Anthropic 风格
 {
     "role": "user",
     "content": [
@@ -220,43 +326,55 @@ user tool_result
 }
 ```
 
-这个结构不对，循环就接不上。
+这就是**铁律二**。理解了原因就不容易再写错：从模型视角，工具结果是"环境（user 侧）递进来的新信息"，所以角色归 user。OpenAI 把它单独拎出来叫 `role: "tool"`，Anthropic 选择复用 user 角色、用 `type` 区分——两种设计都讲得通，但**不能混用**。
 
-### 3. 只处理了第一个 tool_use
+### 3. 一个 tool_use_id 配错，整轮崩（违反铁律三）
 
-模型一次回复里可能有多个内容块，其中也可能有多个 `tool_use`。
+模型在一轮回复里可能同时请求多个工具，`content` 数组里塞了多个 `tool_use` 块：
 
-所以代码不要假设 `response.content[0]` 一定就是工具调用，而应该遍历所有 block：
+```python
+{"role": "assistant", "content": [
+    {"type": "tool_use", "id": "call_A", "name": "bash", "input": {"command": "ls"}},
+    {"type": "tool_use", "id": "call_B", "name": "bash", "input": {"command": "pwd"}},
+]}
+```
+
+那下一条 user 消息里就必须返回**两个** `tool_result`，并且 `tool_use_id` 严格对应：
+
+```python
+{"role": "user", "content": [
+    {"type": "tool_result", "tool_use_id": "call_A", "content": "hello.py\n"},
+    {"type": "tool_result", "tool_use_id": "call_B", "content": "/home/me"},
+]}
+```
+
+我最早图省事，只处理了 `response.content[0]`，把后面那些 tool_use 块全丢了。结果是 `call_B` 永远等不到结果，API 报"有 tool_use 没有对应的 tool_result"。
+
+这就是**铁律三**。正确做法是遍历整条回复的所有块：
 
 ```python
 for block in response.content:
     if block.type == "tool_use":
-        ...
+        ...执行并收集结果，每个 block.id 都要配一个 tool_result
 ```
 
-### 4. 误以为危险命令黑名单等于权限系统
+一个都不能漏，id 一个都不能错。
 
-本章代码里有一个非常轻量的危险命令拦截，比如拦截 `rm -rf /`、`shutdown` 等。
+### 4. 把字符串当成了完整的 assistant 消息
 
-但这不是安全沙箱，也不是完整权限系统。它只是为了防止 Day 01 示例太危险。
+还有一个隐晦的坑。模型某轮可能只回了文字、没调工具（比如最后那轮的收尾）。我一开始以为"没调工具就不用 append"，结果下一轮模型把前面自己说过的话全"忘"了，开始重复说一遍。
 
-真正的权限边界至少要考虑：
+根因还是铁律一：**assistant 只追加，不原地改，也不省略**。不管这一轮有没有 tool_use，`response.content` 都要整体 append 进去。模型是无状态的，它每一轮都从头重读整个 messages，少一条它就真的不知道那条存在过。
 
-- 用户确认；
-- 命令分类；
-- 工作目录限制；
-- 文件读写范围；
-- 网络访问；
-- 超时和资源限制；
-- 审计日志。
+判断循环是否结束，看的是 `stop_reason`，而不是"这一轮有没有 tool_use 块"。这两件事要分开：append 是无条件的，退出循环才看 stop_reason。
 
-这些会放到后面的 Permission 章节。
+### 5. 以为危险命令黑名单就是权限系统
 
-### 5. 没有停止条件就会变成死循环
+本章代码里有一个非常轻量的危险命令拦截，比如拦 `rm -rf /`、`shutdown`。但这不是安全沙箱，也不是完整权限系统，只是为了让示例别太容易翻车。
 
-Agent Loop 必须检查 `stop_reason`。
+真正的权限边界至少要考虑：用户确认、命令分类、工作目录限制、文件读写范围、网络访问、超时和资源限制、审计日志。这些放到后面的 Permission 章节再展开。
 
-如果模型已经不再请求工具，Harness 就应该停下来，把最终文本输出给用户。否则模型可能一直被迫进入下一轮，造成无意义循环。
+我提这个坑，是因为它和前四个性质不同——前四个是"不理解 messages 结构"的错，这个是"把临时补丁当成了基础设施"的错。用前言里的话说：危险命令黑名单是会随模型变强而过时的**补丁**，而真正的权限系统是承担"行动边界"职责的**结构性分工**，两者不能混为一谈。
 
 ## 对应真实 Claude Code 的哪里
 
@@ -277,7 +395,7 @@ model call -> tool use -> tool execution -> tool result -> model call
 - Context Compact：当 `messages` 太长时压缩上下文。
 - SubAgent：把一部分任务交给另一个循环。
 
-所以 Day 01 的目标不是复刻完整 Claude Code，而是先抓住它最小的骨架。
+所以第一章的目标不是复刻完整 Claude Code，而是先抓住它最小的骨架。
 
 ## 小结
 
