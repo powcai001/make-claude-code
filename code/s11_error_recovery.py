@@ -15,6 +15,7 @@ Error Recovery 不是假装错误不存在，而是把错误变成模型和 Harn
 from __future__ import annotations
 
 import os
+import random
 import subprocess
 import time
 from datetime import datetime
@@ -524,17 +525,36 @@ def maybe_compact_messages(messages: list[dict[str, Any]], system_prompt: str) -
 
 
 def classify_error(message: str) -> ErrorKind:
-    """把非结构化错误文本粗略分类，供恢复策略使用。"""
+    """把错误文本粗略分类，供恢复策略和 API 重试使用。"""
     lowered = message.lower()
-    if "permission denied" in lowered or "user rejected" in lowered:
+    if "permission denied" in lowered or "user rejected" in lowered or "forbidden" in lowered:
         return "permission"
-    if "must be" in lowered or "required" in lowered or "invalid" in lowered:
-        return "validation"
-    if "not found" in lowered or "no such file" in lowered:
+    if "not found" in lowered or "no such file" in lowered or "filenotfounderror" in lowered:
         return "not_found"
-    if "timed out" in lowered or "timeout" in lowered:
+    if "timed out" in lowered or "timeout" in lowered or "deadline exceeded" in lowered:
         return "timeout"
-    if "rate limit" in lowered or "overloaded" in lowered or "temporarily" in lowered:
+    if "must be" in lowered or "required" in lowered or "invalid" in lowered or "validation" in lowered:
+        return "validation"
+    if any(
+        marker in lowered
+        for marker in (
+            "rate limit",
+            "429",
+            "500",
+            "502",
+            "503",
+            "504",
+            "529",
+            "overloaded",
+            "temporarily",
+            "service unavailable",
+            "connection reset",
+            "connection refused",
+            "connection aborted",
+            "econnreset",
+            "epipe",
+        )
+    ):
         return "transient"
     return "unknown"
 
@@ -578,16 +598,20 @@ def format_error_record(record: ErrorRecord) -> str:
     )
 
 
-def attach_recovery_hint(where: str, output: str) -> str:
-    """当工具结果看起来是错误时，追加恢复建议。"""
-    stripped = output.strip()
-    lowered = stripped.lower()
-    is_error = (
+def is_error_output(output: str) -> bool:
+    """判断工具结果是否表示失败，统一进入错误记录和恢复提示链路。"""
+    lowered = output.strip().lower()
+    return (
         lowered.startswith("error:")
         or lowered.startswith("permission denied")
         or lowered.startswith("(exit code")
+        or lowered.startswith("(no output, exit code")
     )
-    if not is_error:
+
+
+def attach_recovery_hint(where: str, output: str) -> str:
+    """当工具结果表示错误时，追加恢复建议。"""
+    if not is_error_output(output):
         return output
     record = record_error(where, output)
     return f"{output}\n\n{format_error_record(record)}"
@@ -606,20 +630,32 @@ def run_show_errors() -> str:
     return "\n".join(lines)
 
 
+MODEL_RETRY_ATTEMPTS = 3
+MODEL_RETRY_BASE_DELAY_SECONDS = 0.5
+MODEL_RETRY_MAX_DELAY_SECONDS = 4.0
+
+
+def retry_delay_seconds(attempt: int) -> float:
+    """返回带轻量 jitter 的有界指数退避时间。"""
+    base_delay = min(
+        MODEL_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1)),
+        MODEL_RETRY_MAX_DELAY_SECONDS,
+    )
+    return base_delay + random.uniform(0, base_delay * 0.25)
+
+
 def call_model_with_retries(**kwargs: Any) -> Any:
-    """调用模型 API；对短暂错误做有限重试，对最终失败给出结构化记录。"""
+    """只对 transient API 错误做有限重试，其他错误立即返回结构化失败。"""
     last_error: Exception | None = None
-    for attempt in range(1, 4):
+    for attempt in range(1, MODEL_RETRY_ATTEMPTS + 1):
         try:
             return client.messages.create(**kwargs)
         except Exception as exc:
             last_error = exc
             message = f"{type(exc).__name__}: {exc}"
-            kind = classify_error(message)
-            if kind != "transient" and attempt == 1:
+            if classify_error(message) != "transient" or attempt == MODEL_RETRY_ATTEMPTS:
                 break
-            if attempt < 3:
-                time.sleep(0.5 * attempt)
+            time.sleep(retry_delay_seconds(attempt))
 
     message = f"{type(last_error).__name__}: {last_error}" if last_error else "unknown model error"
     record = record_error("model_api", message)
@@ -702,10 +738,13 @@ def run_bash(command: str) -> str:
         return f"Error: {exc}"
 
     output = (result.stdout + result.stderr).strip()
-    if not output:
-        output = f"(no output, exit code {result.returncode})"
-    elif result.returncode != 0:
-        output = f"(exit code {result.returncode})\n{output}"
+    if result.returncode != 0:
+        if output:
+            output = f"(exit code {result.returncode})\n{output}"
+        else:
+            output = f"(exit code {result.returncode}; no output)"
+    elif not output:
+        output = "(no output, exit code 0)"
 
     return output[:50_000]
 
@@ -993,7 +1032,6 @@ SUBAGENT_TOOL_HANDLERS: dict[str, ToolHandler] = {
     "read_skill": lambda **kwargs: run_read_skill(kwargs["name"]),
     "read_memory": lambda **kwargs: run_read_memory(),
     "show_system_prompt": lambda **kwargs: run_show_system_prompt(),
-    "show_errors": lambda **kwargs: run_show_errors(),
 }
 
 
@@ -1191,7 +1229,9 @@ TOOLS = [
 ]
 
 SUBAGENT_TOOLS = [
-    tool for tool in TOOLS if tool["name"] in {"bash", "read_file", "list_skills", "read_skill", "read_memory", "show_system_prompt", "show_errors"}
+    tool
+    for tool in TOOLS
+    if tool["name"] in {"bash", "read_file", "list_skills", "read_skill", "read_memory", "show_system_prompt"}
 ]
 
 
